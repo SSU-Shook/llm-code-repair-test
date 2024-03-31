@@ -1,0 +1,1 @@
+"Sensitive cookie without SameSite restrictions","Sensitive cookies where the SameSite attribute is set to ""None"" can in some cases allow for Cross-Site Request Forgery (CSRF) attacks.","warning","Sensitive cookie with SameSite set to 'None'.","/VulnFinder-CodeQL-main/src/javascript-cwe/CWE-1275/examples/SameSiteCookieBad.js","4","33","4","91"

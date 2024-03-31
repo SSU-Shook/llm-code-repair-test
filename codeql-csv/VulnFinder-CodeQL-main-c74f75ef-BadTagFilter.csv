@@ -1,0 +1,1 @@
+"Bad HTML filtering regexp","Matching HTML tags using regular expressions is hard to do right, and can easily lead to security issues.","warning","This regular expression does not match script end tags like </script >.","/VulnFinder-CodeQL-main/src/javascript-cwe/CWE-116/examples/BadTagFilter.js","2","24","2","58"

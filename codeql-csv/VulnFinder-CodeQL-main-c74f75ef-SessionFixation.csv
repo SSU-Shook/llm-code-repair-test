@@ -1,0 +1,1 @@
+"Failure to abandon session","Reusing an existing session as a different user could allow an attacker to access someone else's account by using their session.","warning","Route handler does not invalidate session following login.","/VulnFinder-CodeQL-main/src/javascript-cwe/CWE-384/examples/SessionFixation.js","10","1","18","2"

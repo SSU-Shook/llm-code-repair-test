@@ -1,0 +1,1 @@
+"JWT missing secret or public key verification","The application does not verify the JWT payload with a cryptographic secret or public key.","warning","This argument disables the integrity enforcement of the token verification.","/VulnFinder-CodeQL-main/src/javascript-cwe/CWE-347/examples/missing-key-verification-bad.js","6","19","6","23"

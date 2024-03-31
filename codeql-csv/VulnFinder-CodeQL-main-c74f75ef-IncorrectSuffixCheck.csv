@@ -1,0 +1,1 @@
+"Incorrect suffix check","Using indexOf to implement endsWith functionality is error-prone if the -1 case is not explicitly handled.","error","This suffix check is missing a length comparison to correctly handle lastIndexOf returning -1.","/VulnFinder-CodeQL-main/src/javascript-cwe/CWE-020/examples/IncorrectSuffixCheck.js","2","10","2","49"

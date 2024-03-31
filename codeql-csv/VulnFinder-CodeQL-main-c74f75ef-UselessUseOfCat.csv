@@ -1,0 +1,1 @@
+"Unnecessary use of `cat` process","Using the `cat` process to read a file is unnecessarily complex, inefficient, unportable, and can lead to subtle bugs, or even security vulnerabilities.","error","Unnecessary use of `cat` process. Can be replaced with: fs.readFileSync(name)","/VulnFinder-CodeQL-main/src/javascript-cwe/CWE-078/examples/useless-cat.js","4","12","4","48"
