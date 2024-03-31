@@ -1,0 +1,56 @@
+
+
+
+
+
+
+D:\SATS\test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-020\examples\MissingOriginCheckBad.js
+function postMessageHandler(event) {
+let origin = event.origin.toLowerCase();
+
+console.log(origin) //vulnerability: Building log entries from user-controlled sources is vulnerable to insertion of forged log entries by a malicious user.
+// BAD: the origin property is not checked
+eval(event.data);
+}
+
+window.addEventListener('message', postMessageHandler, false);
+
+
+
+
+// llm model: gpt-4
+function postMessageHandler(event) {
+
+let origin = event.origin.toLowerCase();
+
+// FIXED: Removed direct logging of untrusted user input to improve security
+// console.log(origin) 
+
+// BAD: the origin property is not checked
+// FIXED: Added a condition to check if the origin is trusted
+if (origin === 'http://trusted.url'){
+  eval(event.data);
+} else {
+  console.warn('Untrusted message origin');
+}
+
+}
+
+window.addEventListener('message', postMessageHandler, false);
+
+
+
+
+// llm model: gpt-3.5-turbo
+function postMessageHandler(event) {
+  let origin = event.origin.toLowerCase();
+
+  // Fixed vulnerability by removing the eval function
+  console.log(origin);
+}
+
+window.addEventListener('message', postMessageHandler, false);
+
+
+
+

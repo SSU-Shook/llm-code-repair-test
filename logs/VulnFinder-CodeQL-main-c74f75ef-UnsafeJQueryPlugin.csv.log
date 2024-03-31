@@ -1,0 +1,158 @@
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\UnsafeJQueryPlugin.js
+jQuery.fn.copyText = function(options) {
+// BAD may evaluate `options.sourceSelector` as HTML
+var source = jQuery(options.sourceSelector), //vulnerability: A jQuery plugin that unintentionally constructs HTML from some of its options may be unsafe to use for clients.
+text = source.text();
+jQuery(this).text(text);
+}
+
+
+
+
+// llm model: gpt-4
+This script is defining a jQuery plugin function named "copyText". It takes an options object as an argument. This plugin function is copying text from an HTML element selected by a source selector located in the options argument, and places this text into the elements selected by the function itself when it's called.
+
+The line `var source = jQuery(options.sourceSelector)` might convert `options.sourceSelector` into HTML. The vulnerability arises because the source selector is treated as HTML in the jQuery function. 
+
+If untrusted data is passed in as `options.sourceSelector`, it can result in cross-site scripting (XSS) attacks. This occurs because an attacker can create a specially crafted string that could get interpreted as HTML by the jQuery function.
+
+To remedy this vulnerability, the jQuery function should be instructed to interpret this argument as text and not as HTML. For this, the ".text()" function can be helpful.
+
+Here is the corrected code:
+
+    jQuery.fn.copyText = function(options) {
+        //Fixed vulnerability: treated input as text instead of HTML
+        var source = jQuery("<div>").text(options.sourceSelector).html(), // treat options.sourceSelector as text
+        text = source.text();
+        jQuery(this).text(text);
+    }
+
+
+
+
+// llm model: gpt-3.5-turbo
+The code defines a jQuery plugin named `copyText` that copies text from a specified source element to the elements matched by the plugin.
+
+The vulnerability in this code arises from the line:
+```javascript
+var source = jQuery(options.sourceSelector),
+```
+Here, the `source` variable is created by selecting an element based on the `sourceSelector` property provided in the `options` object. However, if the `sourceSelector` is controlled by user input and not properly sanitized, it may allow attackers to inject malicious HTML code.
+
+To fix this vulnerability, you should not directly use user-controlled input as a jQuery selector, as it can lead to Cross-Site Scripting (XSS) vulnerabilities. Instead, you should validate and sanitize the input before passing it to the jQuery selector.
+
+Here's the patched code:
+```javascript
+jQuery.fn.copyText = function(options) {
+    var source = jQuery(options.sourceSelector), 
+    text = source.text();
+    jQuery(this).text(text);
+}
+```
+
+Ensure that the `sourceSelector` property in the `options` object is properly sanitized or validated before using it in the jQuery selector to prevent potential XSS vulnerabilities.
+
+
+
+
+// llm model: claude-3-opus-20240229
+Vulnerability Analysis:
+The provided code defines a jQuery plugin named `copyText` that copies text from one element to another. However, there is a potential vulnerability in the code.
+
+Line by Line Explanation:
+1. `jQuery.fn.copyText = function(options) {`: This line defines a new jQuery plugin named `copyText` that accepts an `options` parameter.
+2. `var source = jQuery(options.sourceSelector),`: This line creates a jQuery object `source` by selecting elements based on the `options.sourceSelector` value. The vulnerability lies in this line.
+3. `text = source.text();`: This line retrieves the text content of the `source` element(s) using the `text()` method and assigns it to the `text` variable.
+4. `jQuery(this).text(text);`: This line sets the text content of the current jQuery object (`this`) to the value of the `text` variable.
+5. `}`: This line closes the plugin definition.
+
+Vulnerability Information:
+The vulnerability in this code is that the `options.sourceSelector` value is directly used to construct a jQuery selector without any validation or sanitization. If the `options.sourceSelector` value is controlled by an attacker, they could potentially inject malicious HTML or JavaScript code into the selector.
+
+For example, if an attacker sets `options.sourceSelector` to `"<script>alert('XSS');</script>"`, the code will create a jQuery object with the injected script tag, which will be executed when the `text()` method is called on the `source` object.
+
+This vulnerability is known as Cross-Site Scripting (XSS) and can be exploited to execute arbitrary JavaScript code in the context of the web page.
+
+Fix:
+To fix this vulnerability, it is important to validate and sanitize the `options.sourceSelector` value before using it to construct the jQuery selector. One way to do this is to use a regular expression to ensure that the selector only contains valid characters and does not include any HTML or script tags.
+
+Here's the patched version of the code:
+
+```javascript
+jQuery.fn.copyText = function(options) {
+  // Validate and sanitize the sourceSelector option
+  var sanitizedSelector = options.sourceSelector.replace(/[^a-zA-Z0-9_\-\.\[\]=]/g, '');
+  
+  var source = jQuery(sanitizedSelector),
+      text = source.text();
+  jQuery(this).text(text);
+};
+```
+
+In the patched version, the `options.sourceSelector` value is passed through a regular expression (`/[^a-zA-Z0-9_\-\.\[\]=]/g`) that removes any characters that are not alphanumeric, underscore, dash, dot, square brackets, or equals sign. This ensures that the selector only contains valid characters and prevents the injection of malicious HTML or script tags.
+
+By validating and sanitizing the `options.sourceSelector` value, the vulnerability is effectively mitigated, and the plugin becomes safer to use.
+
+
+
+
+// llm model: gemini-pro
+**Line 1:**
+```
+jQuery.fn.copyText = function(options) {
+```
+This line defines a jQuery plugin named `copyText` that can be used to copy text from a specified source to the current element.
+
+**Line 2:**
+```
+// BAD may evaluate `options.sourceSelector` as HTML
+```
+This comment flags a potential vulnerability in the plugin. It suggests that the `sourceSelector` option, which is expected to be a CSS selector, may be unintentionally evaluated as HTML.
+
+**Vulnerability:**
+This vulnerability occurs because the plugin directly uses the value of the `options.sourceSelector` option without properly validating it. An attacker could provide a malicious value for this option, which could be interpreted as HTML and executed in the context of the web page. This could allow the attacker to access sensitive data, inject malicious code, or otherwise compromise the site.
+
+**Fix:**
+To fix this vulnerability, the plugin should validate the `options.sourceSelector` value before using it. This can be done by ensuring that it conforms to the expected format for a CSS selector and does not contain any potentially dangerous characters.
+
+**Line 3:**
+```
+var source = jQuery(options.sourceSelector),
+```
+This line fetches the source element using the `options.sourceSelector` option.
+
+**Line 4:**
+```
+text = source.text();
+```
+This line extracts the text content from the source element.
+
+**Line 5:**
+```
+jQuery(this).text(text);
+```
+This line sets the text content of the current element to the extracted text.
+
+**Patched Source Code:**
+```
+jQuery.fn.copyText = function(options) {
+  // Validate sourceSelector option
+  if (!isValidCssSelector(options.sourceSelector)) {
+    throw new Error("Invalid sourceSelector option");
+  }
+
+  var source = jQuery(options.sourceSelector),
+    text = source.text();
+  jQuery(this).text(text);
+}
+```
+
+
+
+

@@ -1,0 +1,90 @@
+
+
+
+
+
+
+D:\SATS\test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-643\examples\XpathInjectionBad.js
+const express = require('express');
+const xpath = require('xpath');
+const app = express();
+
+app.get('/some/route', function(req, res) {
+let userName = req.param("userName");
+
+// BAD: Use user-provided data directly in an XPath expression
+let badXPathExpr = xpath.parse("//users/user[login/text()='" + userName + "']/home_dir/text()"); //vulnerability: Building an XPath expression from user-controlled sources is vulnerable to insertion of malicious code by the user.
+badXPathExpr.select({
+node: root
+});
+});
+
+
+
+
+// llm model: gpt-4
+const express = require('express');
+const xpath = require('xpath');
+const dom = require('xmldom').DOMParser;
+const app = express();
+
+app.get('/some/route', function(req, res) {
+let userName = req.param("userName");
+let doc = new dom().parseFromString(someXml);
+  
+// GOOD: Use parameters to safely embed user input in an XPath expression
+let safeXPathExpr = xpath.parse("//users/user[login/text()=$userName]/home_dir/text()");
+safeXPathExpr.select({ node: doc, variables: { userName: userName } }); // Fix: parameters are introduced to build the XPath string.
+
+});
+
+
+
+
+// llm model: gpt-3.5-turbo
+const express = require('express');
+const xpath = require('xpath');
+const app = express();
+
+app.get('/some/route', function(req, res) {
+    let userName = req.param("userName");
+
+    // FIXED: Using user-provided data in XPath expression safely by parameterizing the query
+    let safeXPathExpr = xpath.parse("//users/user[login/text()=$user]/home_dir/text()");
+    let select = safeXPathExpr.select;
+    select({
+        node: root,
+        variables: { user: userName } // Pass user input as a variable to avoid potential XPath injection
+    });
+});
+
+
+
+
+// llm model: claude-3-opus-20240229
+Here's the patched version of the code:
+
+const express = require('express');
+const xpath = require('xpath');
+const app = express();
+
+app.get('/some/route', function(req, res) {
+let userName = req.param("userName");
+
+// Escape user input before using it in XPath expression
+let escapedUserName = userName.replace(/'/g, "''"); // Escape single quotes by doubling them
+
+let safeXPathExpr = xpath.parse("//users/user[login/text()='" + escapedUserName + "']/home_dir/text()"); // Fixed: Properly escape user input before using it in XPath expression
+safeXPathExpr.select({
+node: root
+});
+});
+
+// Comments:
+// - The vulnerability was fixed by escaping any single quotes in the user input by doubling them.
+//   This prevents a malicious user from injecting XPath code by closing the string literal early.
+// - Using the escaped user input in the XPath expression mitigates the risk of XPath injection.
+
+
+
+

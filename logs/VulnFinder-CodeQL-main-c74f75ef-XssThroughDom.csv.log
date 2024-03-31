@@ -1,0 +1,63 @@
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\XssThroughDom.js
+$("button").click(function () {
+var target = $(this).attr("data-target");
+$(target).hide(); //vulnerability: Reinterpreting text from the DOM as HTML can lead to a cross-site scripting vulnerability.
+});
+
+
+
+
+// llm model: gpt-4
+$("button").click(function () {
+var target = $(this).attr("data-target");
+$(target).hide(); // Original vulnerability: Reinterpreting text could lead to a cross-site scripting vulnerability
+});
+
+// FIX:
+// Escape the attribute to prevent possible injection attacks.
+$("button").click(function () {
+var target = $(this).attr("data-target");
+target = $("<div>").text(target).html(); // Escape the attribute here
+$(target).hide();
+});
+
+
+
+
+// llm model: gpt-3.5-turbo
+$("button").click(function () {
+var target = $(this).data("target"); // Using data() method to extract data-target attribute value
+$(target).hide();
+});
+
+
+
+
+// llm model: claude-3-opus-20240229
+Here's the patched version of the code:
+
+$("button").click(function () {
+var target = $(this).attr("data-target");
+$($.parseHTML(target)).hide(); // Fixed: Using $.parseHTML to safely parse the target as HTML
+// Explanation: Passing the target directly to $() can lead to XSS if the target contains malicious HTML.
+// By using $.parseHTML, we ensure that the target is safely parsed as HTML before being used.
+});
+
+
+
+
+// llm model: gemini-pro
+$("button").click(function () {
+var target = $(this).attr("data-target");
+$(target).css("display", "none"); // Reinterpreting text from the DOM as HTML can lead to a cross-site scripting vulnerability.
+});
+
+
+
+

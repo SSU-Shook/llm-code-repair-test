@@ -1,0 +1,269 @@
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-1004\examples\ClientExposedCookieBad.js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+res.setHeader("Set-Cookie", `authKey=${makeAuthkey()}`); //vulnerability: Sensitive cookies set by a server can be read by the client if the `httpOnly` flag is not set.
+res.writeHead(200, { 'Content-Type': 'text/html' });
+res.end('<h2>Hello world</h2>');
+});
+
+
+
+
+// llm model: gpt-4
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+res.setHeader("Set-Cookie", `authKey=${makeAuthkey()}; HttpOnly`); //Fix: Added `HttpOnly` attribute to the cookie, preventing undesired and insecure accessibility from client-side scripts
+res.writeHead(200, { 'Content-Type': 'text/html' });
+res.end('<h2>Hello world</h2>');
+});
+
+
+
+
+// llm model: gpt-3.5-turbo
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+res.setHeader("Set-Cookie", `authKey=${makeAuthkey()}; HttpOnly`); // Fixed the vulnerability by adding the `HttpOnly` flag to the cookie
+res.writeHead(200, { 'Content-Type': 'text/html' });
+res.end('<h2>Hello world</h2>');
+});
+
+
+
+
+// llm model: claude-3-opus-20240229
+Here's the patched source code:
+
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.setHeader("Set-Cookie", `authKey=${makeAuthkey()}; HttpOnly`); // Added HttpOnly flag to prevent client-side access to sensitive cookie
+  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.end('<h2>Hello world</h2>');
+});
+
+
+
+
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-312\examples\CleartextStorage.js
+var express = require('express');
+
+var app = express();
+app.get('/remember-password', function (req, res) {
+let pw = req.param("current_password");
+// BAD: Setting a cookie value with cleartext sensitive data.
+res.cookie("password", pw); //vulnerability: Sensitive cookies set by a server can be read by the client if the `httpOnly` flag is not set.
+});
+
+
+
+
+// llm model: gpt-4
+var express = require('express');
+
+var app = express();
+app.get('/remember-password', function (req, res) {
+let pw = req.param("current_password");
+// BAD: Setting a cookie value with cleartext sensitive data.
+// From the previous code, the password cookie could be accessed via scripting, opening room for cross-site scripting attacks. To fix the vulnerability, I've included the `httpOnly` flag to prevent this. 
+res.cookie("password", pw, { httpOnly: true });
+});
+
+
+
+
+// llm model: gpt-3.5-turbo
+var express = require('express');
+
+var app = express();
+app.get('/remember-password', function (req, res) {
+    let pw = req.param("current_password");
+    // FIXED: Using `res.cookie` with the `httpOnly` flag set to true to prevent client-side access to sensitive cookie data.
+    res.cookie("password", pw, { httpOnly: true }); //vulnerability: Sensitive cookies set by a server can be read by the client if the `httpOnly` flag is not set.
+});
+
+
+
+
+// llm model: claude-3-opus-20240229
+Here's the patched version of the code with the vulnerability fixed:
+
+var express = require('express');
+
+var app = express();
+app.get('/remember-password', function (req, res) {
+let pw = req.param("current_password");
+// FIXED: Setting a cookie value with sensitive data and httpOnly flag set to true.
+res.cookie("password", pw, { httpOnly: true });
+});
+
+// Explanation: The 'httpOnly' flag is set to true when setting the cookie.
+// This ensures that the sensitive cookie value cannot be accessed by client-side JavaScript,
+// mitigating the risk of unauthorized access to sensitive data.
+
+
+
+
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-312\examples\CleartextStorageGood.js
+var express = require('express');
+var crypto = require('crypto'),
+password = getPassword();
+
+function encrypt(text){
+var cipher = crypto.createCipher('aes-256-ctr', password);
+return cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
+}
+
+var app = express();
+app.get('/remember-password', function (req, res) {
+let pw = req.param("current_password");
+// GOOD: Encoding the value before setting it.
+res.cookie("password", encrypt(pw)); //vulnerability: Sensitive cookies set by a server can be read by the client if the `httpOnly` flag is not set.
+});
+
+
+
+
+// llm model: gpt-4
+var express = require('express');
+var crypto = require('crypto'),
+password = getPassword();
+
+function encrypt(text){
+var cipher = crypto.createCipher('aes-256-ctr', password);
+return cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
+}
+
+var app = express();
+app.get('/remember-password', function (req, res) {
+let pw = req.param("current_password");
+// GOOD: Encoding the value before setting it.
+// FIX: Setting `httpOnly` flag to true to ensure the cookie is not accessible via client-side script
+res.cookie("password", encrypt(pw), { httpOnly: true }); 
+});
+
+
+
+
+// llm model: gpt-3.5-turbo
+var express = require('express');
+var crypto = require('crypto'),
+password = getPassword();
+
+function encrypt(text){
+var cipher = crypto.createCipher('aes-256-ctr', password);
+return cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
+}
+
+var app = express();
+app.get('/remember-password', function (req, res) {
+  let pw = req.param("current_password");
+  // FIXED: Added { httpOnly: true } to set the 'httpOnly' flag for the cookie, making it inaccessible to client-side scripts.
+  res.cookie("password", encrypt(pw), { httpOnly: true }); //vulnerability: Sensitive cookies set by a server can be read by the client if the `httpOnly` flag is not set.
+});
+
+
+
+
+// llm model: claude-3-opus-20240229
+Here's the patched source code with the vulnerability fixed:
+
+var express = require('express');
+var crypto = require('crypto'),
+password = getPassword();
+
+function encrypt(text){
+var cipher = crypto.createCipher('aes-256-ctr', password);
+return cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
+}
+
+var app = express();
+app.get('/remember-password', function (req, res) {
+let pw = req.param("current_password");
+// GOOD: Encoding the value before setting it.
+// FIX: Set the `httpOnly` flag to true to prevent client-side access to the cookie.
+res.cookie("password", encrypt(pw), { httpOnly: true });
+});
+
+// Explanation: The `httpOnly` flag was added to the `res.cookie` options to ensure that the sensitive "password" cookie cannot be accessed by client-side JavaScript, preventing potential misuse or theft of the cookie value.
+
+
+
+
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-614\examples\ClearTextCookieBad.js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+res.setHeader("Set-Cookie", `authKey=${makeAuthkey()}`); //vulnerability: Sensitive cookies set by a server can be read by the client if the `httpOnly` flag is not set.
+res.writeHead(200, { 'Content-Type': 'text/html' });
+res.end('<h2>Hello world</h2>');
+});
+
+
+
+
+// llm model: gpt-4
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+res.setHeader('Set-Cookie', `authKey=${makeAuthkey()}; HttpOnly`); // We added 'HttpOnly' to the Set-Cookie directive to prevent the client-side script access to the cookie. This mitigates the risk of client-side XSS attacks.
+res.writeHead(200, { 'Content-Type': 'text/html' });
+res.end('<h2>Hello world</h2>');
+});
+
+
+
+
+// llm model: gpt-3.5-turbo
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+res.setHeader("Set-Cookie", `authKey=${makeAuthkey()}; HttpOnly`); // Fixed the vulnerability by adding the `HttpOnly` flag to the cookie
+res.writeHead(200, { 'Content-Type': 'text/html' });
+res.end('<h2>Hello world</h2>');
+});
+
+
+
+
+// llm model: claude-3-opus-20240229
+Here's the patched code with the `httpOnly` flag set for the sensitive cookie:
+
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+res.setHeader("Set-Cookie", `authKey=${makeAuthkey()}; HttpOnly`); // Fixed: Added HttpOnly flag to prevent client-side access to the sensitive cookie
+res.writeHead(200, { 'Content-Type': 'text/html' });
+res.end('<h2>Hello world</h2>');
+});
+
+
+
+
