@@ -122,7 +122,15 @@ for vulnerability_dict in vulnerabilities_dict_list:
     with open(source_file_path, 'r') as file:
         for line in file:
             lines.append(line.strip())
-    lines[vulnerability_dict['start_line']-1] += " //vulnerability: " + vulnerability_dict['description'] #취약점이 발견된 줄 뒤에 한 줄 주석으로 codeql의 description 추가
+
+    _, extension = os.path.splitext(source_file_path)
+
+
+    if extension in ['py',]:
+        lines[vulnerability_dict['start_line']-1] += " #vulnerability: " + vulnerability_dict['description'] #취약점이 발견된 줄 뒤에 한 줄 주석으로 codeql의 description 추가
+    else:
+        lines[vulnerability_dict['start_line']-1] += " //vulnerability: " + vulnerability_dict['description'] #취약점이 발견된 줄 뒤에 한 줄 주석으로 codeql의 description 추가
+
 
     code_commented = '\n'.join(lines)
     print(code_commented)
