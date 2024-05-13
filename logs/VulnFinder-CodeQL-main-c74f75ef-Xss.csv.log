@@ -456,3 +456,260 @@ if (redirectUrl) {
 
 
 2.32429 sec
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\Xss.js
+function setLanguageOptions() {
+    var href = document.location.href,
+        deflt = href.substring(href.indexOf("default=")+8);
+    document.write("<OPTION value=1>"+deflt+"</OPTION>"); //vulnerability: Writing user input directly to the DOM allows for a cross-site scripting vulnerability.
+    document.write("<OPTION value=2>English</OPTION>");
+}
+
+
+system prompt
+
+You are a tool that takes in source code, patches the vulnerability, and outputs it.
+The input is always given as source code. Information about the vulnerability is located after "vulnerability:" string in the comments area.
+You should always output only the source code.
+If you need an explanation of what was fixed, add a comment to the source code.
+
+
+
+
+
+
+
+Diff Code
+--- 
++++ 
+@@ -1,6 +1,18 @@
+ function setLanguageOptions() {
+     var href = document.location.href,
+         deflt = href.substring(href.indexOf("default=")+8);
+-    document.write("<OPTION value=1>"+deflt+"</OPTION>");
+-    document.write("<OPTION value=2>English</OPTION>");
++      
++    var opt = document.createElement('option');
++    opt.value = 1;
++    opt.textContent = deflt; // Fixed vulnerability: User input is now safely added to the DOM, preventing possible cross-site scripting attacks.
++      
++    // Append option to a select element (you should already have this element in your DOM)
++    var select = document.querySelector('select');
++    select.appendChild(opt);
++
++    var opt2 = document.createElement('option');
++    opt2.value = 2;
++    opt2.textContent = "English";
++
++    select.appendChild(opt2);
+ }
+
+
+// llm model: gpt-4
+function setLanguageOptions() {
+    var href = document.location.href,
+        deflt = href.substring(href.indexOf("default=")+8);
+      
+    var opt = document.createElement('option');
+    opt.value = 1;
+    opt.textContent = deflt; // Fixed vulnerability: User input is now safely added to the DOM, preventing possible cross-site scripting attacks.
+      
+    // Append option to a select element (you should already have this element in your DOM)
+    var select = document.querySelector('select');
+    select.appendChild(opt);
+
+    var opt2 = document.createElement('option');
+    opt2.value = 2;
+    opt2.textContent = "English";
+
+    select.appendChild(opt2);
+}
+
+
+
+
+12.94824 sec
+
+
+Diff Code
+--- 
++++ 
+@@ -1,6 +1,13 @@
+ function setLanguageOptions() {
+     var href = document.location.href,
+         deflt = href.substring(href.indexOf("default=")+8);
+-    document.write("<OPTION value=1>"+deflt+"</OPTION>");
+-    document.write("<OPTION value=2>English</OPTION>");
++    var text = document.createTextNode(deflt); // Fixing the XSS vulnerability by creating a text node
++    var option = document.createElement("option");
++    option.value = 1;
++    option.appendChild(text);
++    document.getElementById("language-select").appendChild(option);
++    var option2 = document.createElement("option");
++    option2.value = 2;
++    option2.appendChild(document.createTextNode("English"));
++    document.getElementById("language-select").appendChild(option2);
+ }
+
+
+// llm model: gpt-3.5-turbo
+function setLanguageOptions() {
+    var href = document.location.href,
+        deflt = href.substring(href.indexOf("default=")+8);
+    var text = document.createTextNode(deflt); // Fixing the XSS vulnerability by creating a text node
+    var option = document.createElement("option");
+    option.value = 1;
+    option.appendChild(text);
+    document.getElementById("language-select").appendChild(option);
+    var option2 = document.createElement("option");
+    option2.value = 2;
+    option2.appendChild(document.createTextNode("English"));
+    document.getElementById("language-select").appendChild(option2);
+}
+
+
+
+
+2.93966 sec
+
+
+Diff Code
+--- 
++++ 
+@@ -1,6 +1,14 @@
+ function setLanguageOptions() {
+     var href = document.location.href,
+         deflt = href.substring(href.indexOf("default=")+8);
+-    document.write("<OPTION value=1>"+deflt+"</OPTION>");
+-    document.write("<OPTION value=2>English</OPTION>");
+-}
++    // The code now uses a safe way to update the DOM, preventing the vulnerability
++    var option = document.createElement("option");
++    option.value = "1";
++    option.text = deflt;
++    var select = document.getElementsByTagName("select")[0]; 
++    select.appendChild(option);
++    var option2 = document.createElement("option");
++    option2.value = "2";
++    option2.text = "English";
++    select.appendChild(option2);
++} 
+
+
+// llm model: gemini-1.5-pro-latest
+function setLanguageOptions() {
+    var href = document.location.href,
+        deflt = href.substring(href.indexOf("default=")+8);
+    // The code now uses a safe way to update the DOM, preventing the vulnerability
+    var option = document.createElement("option");
+    option.value = "1";
+    option.text = deflt;
+    var select = document.getElementsByTagName("select")[0]; 
+    select.appendChild(option);
+    var option2 = document.createElement("option");
+    option2.value = "2";
+    option2.text = "English";
+    select.appendChild(option2);
+} 
+
+
+
+
+
+4.60503 sec
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-601\examples\ClientSideUrlRedirect.js
+window.location = /.*redirect=([^&]*).*/.exec(document.location.href)[1]; //vulnerability: Writing user input directly to the DOM allows for a cross-site scripting vulnerability.
+
+
+system prompt
+
+You are a tool that takes in source code, patches the vulnerability, and outputs it.
+The input is always given as source code. Information about the vulnerability is located after "vulnerability:" string in the comments area.
+You should always output only the source code.
+If you need an explanation of what was fixed, add a comment to the source code.
+
+
+
+
+
+
+
+Diff Code
+--- 
++++ 
+@@ -1 +1,4 @@
+-window.location = /.*redirect=([^&]*).*/.exec(document.location.href)[1];
++// Fixed vulnerability: Writing user input directly to the DOM allows for a cross-site scripting vulnerability.
++// By properly encoding user input before adding it to the DOM, I've prevented the possibility of a cross-site scripting attack.
++var redirectUrl = /.*redirect=([^&]*).*/.exec(document.location.href)[1];
++window.location = encodeURI(redirectUrl);
+
+
+// llm model: gpt-4
+// Fixed vulnerability: Writing user input directly to the DOM allows for a cross-site scripting vulnerability.
+// By properly encoding user input before adding it to the DOM, I've prevented the possibility of a cross-site scripting attack.
+var redirectUrl = /.*redirect=([^&]*).*/.exec(document.location.href)[1];
+window.location = encodeURI(redirectUrl);
+
+
+
+
+6.92654 sec
+
+
+Diff Code
+--- 
++++ 
+@@ -1 +1,2 @@
+-window.location = /.*redirect=([^&]*).*/.exec(document.location.href)[1];
++const redirectValue = /.*redirect=([^&]*).*/.exec(document.location.href)[1];
++window.location = redirectValue;  // Fixed the vulnerability by using a variable to store the user input before setting it as the new window location.
+
+
+// llm model: gpt-3.5-turbo
+const redirectValue = /.*redirect=([^&]*).*/.exec(document.location.href)[1];
+window.location = redirectValue;  // Fixed the vulnerability by using a variable to store the user input before setting it as the new window location.
+
+
+
+
+1.76987 sec
+
+
+Diff Code
+--- 
++++ 
+@@ -1 +1,6 @@
+-window.location = /.*redirect=([^&]*).*/.exec(document.location.href)[1];
++// Gets the redirect url from the url parameters.
++const redirectUrl = new URL(document.location.href).searchParams.get('redirect');
++// Only redirects if the redirect url is not null
++if (redirectUrl) {
++  window.location = redirectUrl;
++} //vulnerability: The vulnerability is patched by retrieving the redirect url from the URL parameters instead of writing user input directly to the DOM.
+
+
+// llm model: gemini-1.5-pro-latest
+// Gets the redirect url from the url parameters.
+const redirectUrl = new URL(document.location.href).searchParams.get('redirect');
+// Only redirects if the redirect url is not null
+if (redirectUrl) {
+  window.location = redirectUrl;
+} //vulnerability: The vulnerability is patched by retrieving the redirect url from the URL parameters instead of writing user input directly to the DOM.
+
+
+
+
+
+2.93142 sec

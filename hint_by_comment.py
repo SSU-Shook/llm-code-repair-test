@@ -181,7 +181,6 @@ for vulnerability_dict in vulnerabilities_dict_list:
     patched_code=str()
 
     with open(source_file_path, 'r') as file:
-        #diff code - 위에 함수 적용 가능하도록        #코드 추출 -- langchain coder 참고
         original_code = file.read()
         lines = original_code.splitlines()
             
@@ -268,7 +267,7 @@ for vulnerability_dict in vulnerabilities_dict_list:
         diff_code_output = diff_code(original_code, patched_code)
 
 
-        #print diffing results to console and log file
+        #print logs to console and log file
         for output_file in [sys.stdout, log_file]:
             print('\n\nDiff Code', file=output_file)
             print(diff_code_output, file=output_file)
