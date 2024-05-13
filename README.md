@@ -12,3 +12,9 @@ GPT, Claude, Gemini를 활용한 코드 수정 테스트
   
 ## TODO
 - [ ] 소스코드가 긴 경우 코드 수정 구현
+  
+  
+  
+## LLM API Key  
+LLM API 키를 업로드 하였습니다. (env/settings.py)  
+임계치 이상 사용하면 더이상 API Key가 작동하지 않을 수 있습니다. 
