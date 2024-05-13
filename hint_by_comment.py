@@ -61,12 +61,24 @@ anthropic_api_key = settings.LLM_API_KEY['anthropic'] #Anthropic(Claude) API Key
 gemini_api_key = settings.LLM_API_KEY['gemini'] #Gemini API Key
 
 
-openai_client = OpenAI(api_key=openai_api_key)
-anthropic_client = Anthropic(
-    # This is the default and can be omitted
-    api_key=anthropic_api_key
-)
-genai.configure(api_key=gemini_api_key)
+try:
+    openai_client = OpenAI(api_key=openai_api_key)
+except:
+    print("OpenAI API Key Error")
+
+
+try:
+    anthropic_client = Anthropic(
+        api_key=anthropic_api_key
+    )
+except:
+    print("Anthropic API Key Error") #Anthropic은 현재 사용하지 않음
+
+
+try:
+    genai.configure(api_key=gemini_api_key)
+except:
+    print("Gemini API Key Error")
 
 
 script_directory = os.path.dirname(os.path.realpath(__file__)) #파이썬 스크립트가 존재하는 디렉터리
