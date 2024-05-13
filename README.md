@@ -2,7 +2,7 @@
 
 ## hint_by_comment.py  
 ```  
-D:\llm-code-repair-test> & C:/Users/user/AppData/Local/Programs/Python/Python312/python.exe d:/llm-code-repair-test/llm-code-repair-test/hint_by_comment.py
+D:\llm-code-repair-test> python.exe hint_by_comment.py
 input csv file path: d:\llm-code-repair-test\llm-code-repair-test\codeql-csv\VulnFinder-CodeQL-main-c74f75ef-Xss.csv
 ```  
 GPT, Claude, Gemini를 활용한 코드 수정 테스트  
