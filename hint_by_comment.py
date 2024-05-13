@@ -6,8 +6,34 @@ import datetime
 from openai import OpenAI
 from anthropic import Anthropic
 import google.generativeai as genai
+import sys
 
 from env import settings
+import difflib
+import re
+
+
+def extract_code(text):
+    # reference (MIT License): github.com/haseeb-heaven/langchain-coder/
+    try:
+        if '```' in text:
+            matches = re.findall(r'`{3}(.*?)`{3}', text, re.DOTALL)
+            return matches
+
+        else:
+            return [text,]
+        
+    except Exception as exception:
+        return [text,]
+
+
+
+
+def diff_code(code1, code2):
+    code1 = code1.splitlines()
+    code2 = code2.splitlines()
+    diff = difflib.unified_diff(code1, code2, lineterm='')
+    return '\n'.join(diff)
 
 
 
@@ -120,12 +146,18 @@ for vulnerability_dict in vulnerabilities_dict_list:
 
     source_file_path = os.path.abspath(script_directory + vulnerability_dict['path'])
 
-    lines = list()
+    original_code=str()
+    patched_code=str()
+
     with open(source_file_path, 'r') as file:
-        for line in file:
-            lines.append(line.strip())
+        #diff code - 위에 함수 적용 가능하도록        #코드 추출 -- langchain coder 참고
+        original_code = file.read()
+        lines = original_code.splitlines()
+            
 
     _, extension = os.path.splitext(source_file_path)
+    
+
 
 
     if extension in ['py',]:
@@ -166,7 +198,6 @@ for vulnerability_dict in vulnerabilities_dict_list:
     for llm_model_tuple in llm_models_list:
         start = time.time()
         (llm_brand, llm_model) = llm_model_tuple
-        result_code = str()
 
         if llm_brand == 'openai':
             completion = openai_client.chat.completions.create(
@@ -176,10 +207,10 @@ for vulnerability_dict in vulnerabilities_dict_list:
                 {"role": "user", "content": code_commented}
             ]
             )
-            result_code = completion.choices[0].message.content
+            llm_output = completion.choices[0].message.content
 
 
-        elif llm_brand == 'anthropic':
+        elif llm_brand == 'anthropic' and 1==0:
             message = anthropic_client.messages.create(
                 max_tokens=4096,
                 messages=[
@@ -190,28 +221,32 @@ for vulnerability_dict in vulnerabilities_dict_list:
                 ],
                 model=llm_model, system=system_prompt
             )
-            result_code = message.content[0].text
+            llm_output = message.content[0].text
 
         
         elif llm_brand == 'gemini':
             model = genai.GenerativeModel(llm_model)
             response = model.generate_content(system_prompt + '\n'*10 + code_commented)
-            result_code = response.text            
+            llm_output = response.text            
 
 
-        print("// llm model: "+llm_model)
-        log_file.write("// llm model: "+llm_model+'\n')
+        patched_code=extract_code(llm_output)[-1]
+        diff_code_output = diff_code(original_code, patched_code)
 
-        print(result_code)
-        log_file.write(result_code+'\n')
 
-        print("\n"*3)
-        log_file.write("\n"*3+'\n')
+        #print diffing results to console and log file
+        for output_file in [sys.stdout, log_file]:
+            print('\n\nDiff Code', file=output_file)
+            print(diff_code_output, file=output_file)
 
-        
-        end = time.time()
-        log_file.write(f"{end - start:.5f} sec\n")
-        log_file.flush()
-        print(f"{end - start:.5f} sec")
+            print("// llm model: "+llm_model, file=output_file)
+
+            print(patched_code, file=output_file)
+
+            print("\n"*3, file=output_file)
+
+            
+            end = time.time()
+            print(f"{end - start:.5f} sec", file=output_file)
 
 log_file.close()
