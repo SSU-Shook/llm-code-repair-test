@@ -2,7 +2,7 @@
 *.zip
 
 
-env/
+#env/
 
 
 js-cwe-codeql-csv/
