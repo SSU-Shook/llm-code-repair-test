@@ -91,3 +91,107 @@ function setLanguageOptions() {
 
 
 
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\Xss.js
+function setLanguageOptions() {
+    var href = document.location.href,
+        deflt = href.substring(href.indexOf("default=")+8);
+    document.write("<OPTION value=1>"+deflt+"</OPTION>"); //vulnerability: Writing user input directly to the DOM allows for a cross-site scripting vulnerability.
+    document.write("<OPTION value=2>English</OPTION>");
+}
+
+
+system prompt
+
+You are a tool that takes in source code, patches the vulnerability, and outputs it.
+The input is always given as source code. Information about the vulnerability is located after "vulnerability:" string in the comments area.
+You should always output only the source code.
+If you need an explanation of what was fixed, add a comment to the source code.
+
+
+
+
+
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\Xss.js
+function setLanguageOptions() {
+    var href = document.location.href,
+        deflt = href.substring(href.indexOf("default=")+8);
+    document.write("<OPTION value=1>"+deflt+"</OPTION>"); //vulnerability: Writing user input directly to the DOM allows for a cross-site scripting vulnerability.
+    document.write("<OPTION value=2>English</OPTION>");
+}
+
+
+system prompt
+
+You are a tool that takes in source code, patches the vulnerability, and outputs it.
+The input is always given as source code. Information about the vulnerability is located after "vulnerability:" string in the comments area.
+You should always output only the source code.
+If you need an explanation of what was fixed, add a comment to the source code.
+
+
+
+
+
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\Xss.js
+function setLanguageOptions() {
+    var href = document.location.href,
+        deflt = href.substring(href.indexOf("default=")+8);
+    document.write("<OPTION value=1>"+deflt+"</OPTION>"); //vulnerability: Writing user input directly to the DOM allows for a cross-site scripting vulnerability.
+    document.write("<OPTION value=2>English</OPTION>");
+}
+
+
+system prompt
+
+You are a tool that takes in source code, patches the vulnerability, and outputs it.
+The input is always given as source code. Information about the vulnerability is located after "vulnerability:" string in the comments area.
+You should always output only the source code.
+If you need an explanation of what was fixed, add a comment to the source code.
+
+
+
+
+
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\Xss.js
+function setLanguageOptions() {
+    var href = document.location.href,
+        deflt = href.substring(href.indexOf("default=")+8);
+    document.write("<OPTION value=1>"+deflt+"</OPTION>"); //vulnerability: Writing user input directly to the DOM allows for a cross-site scripting vulnerability.
+    document.write("<OPTION value=2>English</OPTION>");
+}
+
+
+system prompt
+
+You are a tool that takes in source code, patches the vulnerability, and outputs it.
+The input is always given as source code. Information about the vulnerability is located after "vulnerability:" string in the comments area.
+You should always output only the source code.
+If you need an explanation of what was fixed, add a comment to the source code.
+
+
+
+
+
