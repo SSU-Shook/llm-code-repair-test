@@ -1,0 +1,187 @@
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\StoredXss.js
+var express = require('express'),
+fs = require('fs');
+
+express().get('/list-directory', function(req, res) {
+fs.readdir('/public', function (error, fileNames) {
+var list = '<ul>';
+fileNames.forEach(fileName => {
+// BAD: `fileName` can contain HTML elements
+list += '<li>' + fileName + '</li>';
+});
+list += '</ul>'
+res.send(list); //vulnerability: Using uncontrolled stored values in HTML allows for a stored cross-site scripting vulnerability.
+});
+});
+
+
+system prompt
+
+You are a program development tool that takes in source code and fixes vulnerabilities.
+The input is given as source code. The comments in the source code contain information about the vulnerability. Comments for vulnerability information start with the string "vulnerability:".
+Analyze the input source code and explain what each line does. And be specific about why the vulnerability occurs. Describe information about the vulnerability. Explain specifically what needs to be done to fix the vulnerability.
+
+Afterward, print out the source code with the vulnerability patched.
+
+
+
+
+
+// llm model: gpt-4
+The input source code is a Node.js code block which utilizes the Express framework to handle HTTP requests. The code creates an HTTP get endpoint at '/list-directory' which reads a directory and sends an HTML-based list of file names in that directory to the client. Here's a step by step breakdown:
+
+1. `var express = require('express'), fs = require('fs');`
+   This line is importing the Express framework and the File System(fs) module from Node.js
+2. `express().get('/list-directory', function(req, res) {`
+   This starts an express application and creates a GET HTTP endpoint at the path '/list-directory'.
+3. `fs.readdir('/public', function (error, fileNames) {`
+   This reads the '/public' directory and retrieves the names of all files within the directory.
+4. The 'fileNames' array is then iterated over and an HTML unordered list is created with each file name as a list item.
+5. Finally, the created HTML list is sent as the response to the client.
+
+The mentioned vulnerability is a Stored Cross-Site Scripting (XSS) vulnerability because the `fileName` which is directly used to build HTML string could contain a malicious script, allowing an attacker to inject script into the web page viewed by other users.
+
+To fix this, we can employ an HTML encoder that will encode the HTML control characters in the filename which could potentially be used to introduce an HTML script. A commonly used library for this is the "he" library.
+
+Now, let's patch the code:
+
+```
+var express = require('express'),
+fs = require('fs'),
+he = require('he'); // require the 'he' library
+
+express().get('/list-directory', function(req, res) {
+fs.readdir('/public', function (error, fileNames) {
+var list = '<ul>';
+fileNames.forEach(fileName => {
+// Encode potentially malicious characters in fileName
+var encodedFileName = he.encode(fileName);
+list += '<li>' + encodedFileName + '</li>';
+});
+list += '</ul>'
+res.send(list);
+});
+});
+```
+
+In the security patched version above, the 'he.encode()' method is used to encode any potentially harmful characters in each file name, preventing the execution of any script possibly present in the file names.
+
+
+
+
+// llm model: gpt-3.5-turbo
+This source code defines a simple Express server that serves a list of files in a directory as an HTML list. However, it is vulnerable to a cross-site scripting (XSS) attack because it directly inserts the file names into the HTML without proper encoding.
+
+Here's a breakdown of the code:
+1. `var express = require('express'), fs = require('fs');`: This line imports the Express framework and the Node.js File System module.
+
+2. `express().get('/list-directory', function(req, res) {`: Defines a route for GET requests to '/list-directory'.
+
+3. `fs.readdir('/public', function (error, fileNames) {`: Reads the contents of the '/public' directory and passes them to a callback function.
+
+4. `var list = '<ul>';`: Initializes a variable 'list' with an opening unordered list tag.
+
+5. `fileNames.forEach(fileName => {`: Iterates over each file name in the directory.
+
+6. `list += '<li>' + fileName + '</li>';`: Concatenates each file name wrapped in list item tags to the 'list' variable. This is where the vulnerability lies.
+
+7. `list += '</ul>'`: Appends a closing unordered list tag to the 'list' variable.
+
+8. `res.send(list);`: Sends the 'list' HTML content as the response.
+
+Vulnerability:
+The vulnerability in this code occurs on line 6 where 'fileName', which is user-controlled data from the directory listing, is directly concatenated into the HTML response. This allows an attacker to inject HTML or JavaScript code into the page, resulting in a stored cross-site scripting (XSS) vulnerability.
+
+To fix the vulnerability:
+To prevent XSS attacks, you need to properly escape the file names before inserting them into the HTML response. One way to do this is by using the `htmlspecialchars` function or a similar encoding function in Node.js to escape special characters like `<`, `>`, `&`, etc.
+
+Here is the patched code:
+```javascript
+var express = require('express'),
+    fs = require('fs');
+
+express().get('/list-directory', function(req, res) {
+    fs.readdir('/public', function (error, fileNames) {
+        var list = '<ul>';
+        fileNames.forEach(fileName => {
+            // GOOD: Using proper escaping to prevent XSS
+            list += '<li>' + escapeHtml(fileName) + '</li>';
+        });
+        list += '</ul>'
+        res.send(list);
+    });
+});
+
+function escapeHtml(text) {
+    var map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+```
+
+In this patched version, the `escapeHtml` function is used to properly escape special characters in the file names before they are added to the HTML response. This helps prevent XSS vulnerabilities by ensuring that the file names are treated as plain text rather than executable code.
+
+
+
+
+// llm model: claude-3-opus-20240229
+Here's the analysis of the source code:
+
+1. `var express = require('express'), fs = require('fs');`: This line imports the Express web framework and the built-in `fs` (file system) module.
+
+2. `express().get('/list-directory', function(req, res) { ... });`: This sets up a route handler for the `/list-directory` endpoint using the Express framework. When a GET request is made to this endpoint, the provided callback function will be executed.
+
+3. `fs.readdir('/public', function (error, fileNames) { ... });`: Inside the route handler, `fs.readdir` is used to read the contents of the `/public` directory. It takes a callback function that receives an `error` (if any) and an array of `fileNames`.
+
+4. `var list = '<ul>';`: This initializes a variable `list` with an opening `<ul>` tag to start an unordered list in HTML.
+
+5. `fileNames.forEach(fileName => { ... });`: This iterates over each `fileName` in the `fileNames` array using the `forEach` loop.
+
+6. `list += '<li>' + fileName + '</li>';`: Inside the loop, each `fileName` is wrapped with `<li>` tags and appended to the `list` variable. However, this is where the vulnerability occurs.
+
+7. `list += '</ul>'`: After the loop, the closing `</ul>` tag is appended to the `list` variable to complete the unordered list.
+
+8. `res.send(list);`: Finally, the generated `list` HTML is sent as the response to the client using `res.send()`.
+
+Vulnerability Information:
+The vulnerability in this code is a stored cross-site scripting (XSS) vulnerability. It occurs because the `fileName` values are directly concatenated into the HTML without any sanitization or escaping. If a `fileName` contains HTML elements or JavaScript code, it will be executed by the browser when the list is rendered. An attacker can exploit this vulnerability by creating a file with a malicious name that includes HTML or JavaScript, leading to unauthorized actions or data theft.
+
+To fix the vulnerability, the `fileName` values should be properly escaped or sanitized before including them in the HTML. Here's the corrected version of the code:
+
+```javascript
+var express = require('express'),
+    fs = require('fs');
+
+express().get('/list-directory', function(req, res) {
+    fs.readdir('/public', function (error, fileNames) {
+        var list = '<ul>';
+        fileNames.forEach(fileName => {
+            // FIX: Escape the `fileName` to prevent XSS
+            var escapedFileName = fileName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            list += '<li>' + escapedFileName + '</li>';
+        });
+        list += '</ul>'
+        res.send(list);
+    });
+});
+```
+
+In the fixed version, the `fileName` is escaped using `replace()` to convert `<` and `>` characters to their respective HTML entities (`&lt;` and `&gt;`). This prevents any HTML elements or JavaScript code in the `fileName` from being executed by the browser.
+
+By properly escaping or sanitizing user-controlled data before using it in HTML, the stored XSS vulnerability is mitigated.
+
+
+
+

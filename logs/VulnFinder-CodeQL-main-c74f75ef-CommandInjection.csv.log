@@ -171,3 +171,172 @@ cp.execSync(`wc -l ${file}`);
 
 
 
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-078\examples\command-injection.js
+var cp = require("child_process"),
+http = require('http'),
+url = require('url');
+
+var server = http.createServer(function(req, res) {
+let file = url.parse(req.url, true).query.path;
+
+cp.execSync(`wc -l ${file}`); // BAD //vulnerability: Using externally controlled strings in a command line may allow a malicious user to change the meaning of the command.
+});
+
+
+system prompt
+
+You are a program development tool that takes in source code and fixes vulnerabilities.
+The input is given as source code. The comments in the source code contain information about the vulnerability. Comments for vulnerability information start with the string "vulnerability:".
+Analyze the input source code and explain what each line does. And be specific about why the vulnerability occurs. Describe information about the vulnerability. Explain specifically what needs to be done to fix the vulnerability.
+
+Afterward, print out the source code with the vulnerability patched.
+
+
+
+
+
+// llm model: gpt-4
+Each line explained:
+-  The first 3 lines import the necessary libraries. `child_process` to spawn operating system commands, `http` to set up the HTTP server, and `url` to parse URL arguments.
+-  Line 4 sets up an HTTP server.
+-  Within the server function, it retrieves the user-supplied file path (line 6) from the URL 'path' parameter.
+-  The crucial line 8 runs a command `wc -l ${file}` which calls the `wc` (word count) LINUX command. It uses node's `child_process` to synchronously execute the command, where `${file}` is a user-supplied argument.
+
+Vulnerability Details:
+The above code is vulnerable to command injection. This vulnerability is primarily because the application is taking input directly from the user and feeding it into a command that gets executed on the server's operating system. If a malicious user provides a malicious payload, it may lead to unauthorized execution of commands on the server.
+
+Fix Explanation:
+To fix the vulnerability, we should avoid passing user-supplied input directly into the `execSync` function. Instead, we can handle it in a more secure way: using the `execFile` method from `child_process`, which takes command arguments as an array, therefore eliminating command injection risks, or sanitizing the inputs before they are processed.
+
+Here is your patched source code:
+
+```javascript
+var cp = require("child_process"),
+http = require('http'),
+url = require('url');
+
+var server = http.createServer(function(req, res) {
+let file = url.parse(req.url, true).query.path;
+
+if (file.includes(";") || file.includes("&")) {
+    res.statusCode = 400;
+    res.end('Invalid Input');
+} else {
+    cp.execFileSync("wc", ["-l", file]); 
+}   
+});
+```
+
+In this patch, we check if the user's input includes commands (`;`, `&`) that could potentially modify the `wc -l` command. If found, an error is returned without running any command. Alternatively, the corrected command is executed using `execFile` which accepts arguments as an array, rather than as a command string, guaranteeing proper order execution and preventing unexpected command execution.
+
+
+
+
+// llm model: gpt-3.5-turbo
+This Node.js script creates an HTTP server that executes a command line using the `cp.execSync` function whenever a request is made. The command being executed is `wc -l ${file}`, where `file` is a query parameter extracted from the request URL. 
+
+The vulnerability in this code is due to the fact that the `file` variable is directly interpolated into the command being executed. This can be exploited by a malicious user to execute arbitrary commands by manipulating the `path` query parameter in the request URL.
+
+To fix this vulnerability, you should sanitize the `file` variable by validating the input and ensuring that it does not contain any malicious characters or commands. One way to do this is by using a whitelist approach where you only allow specific characters or patterns in the `file` variable.
+
+Here's the patched code with input validation:
+
+```javascript
+var cp = require("child_process"),
+http = require('http'),
+url = require('url');
+
+var server = http.createServer(function(req, res) {
+    let queryObject = url.parse(req.url, true).query;
+    let file = queryObject.path;
+
+    if (/^[a-zA-Z0-9_/-]*$/.test(file)) {
+        cp.execSync(`wc -l ${file}`);
+    } else {
+        res.end("Invalid file path");
+    }
+});
+server.listen(3000);
+```
+
+In the patched code:
+1. The `queryObject` variable is used to store the parsed query parameters from the request URL.
+2. The `file` variable is extracted from the `path` query parameter.
+3. A regular expression is used to ensure that the `file` variable only contains alphanumeric characters, underscores, hyphens, and forward slashes. You can adjust this regex pattern based on the allowable characters for file paths in your application.
+4. The `cp.execSync` function is only called if the `file` variable passes the validation. Otherwise, an "Invalid file path" response is sent back.
+5. The server is listening on port 3000, assuming that is the intended port for your application.
+
+
+
+
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-078\examples\command-injection.js
+var cp = require("child_process"),
+http = require('http'),
+url = require('url');
+
+var server = http.createServer(function(req, res) {
+let file = url.parse(req.url, true).query.path;
+
+cp.execSync(`wc -l ${file}`); // BAD //vulnerability: Using externally controlled strings in a command line may allow a malicious user to change the meaning of the command.
+});
+
+
+system prompt
+
+You are a tool that takes in source code, patches the vulnerability, and outputs it.
+The input is always given as source code. Information about the vulnerability is located after "vulnerability:" string in the comments area.
+You should always output only the source code.
+If you need an explanation of what was fixed, add a comment to the source code.
+
+
+
+
+
+// llm model: gpt-4
+var cp = require("child_process"),
+http = require('http'),
+url = require('url');
+
+var server = http.createServer(function(req, res) {
+let file = url.parse(req.url, true).query.path;
+
+// Patched: To prevent injection attacks, sanitize the file name before passing it into execSync function
+let sanitizedFile = file.replace(/[^a-zA-Z0-9.]/g, '');
+cp.execSync(`wc -l ${sanitizedFile}`); // SAFE
+});
+
+
+
+
+// llm model: gpt-3.5-turbo
+var cp = require("child_process"),
+http = require('http'),
+url = require('url');
+
+var server = http.createServer(function(req, res) {
+let queryData = url.parse(req.url, true).query; // Store the query parameters in a variable
+
+if (queryData.hasOwnProperty('path')) { // Check if the 'path' parameter is provided in the query
+    let file = queryData.path;
+
+    cp.execSync(`wc -l "${file}"`); // Fixed // Always validate and properly sanitize inputs used in command execution to prevent command injection
+} else {
+    res.end('Parameter "path" is required');
+}
+});
+
+
+
+

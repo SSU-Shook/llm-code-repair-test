@@ -1,0 +1,64 @@
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-079\examples\ReflectedXss.js
+var app = require('express')();
+
+app.get('/user/:id', function(req, res) {
+if (!isValidUserId(req.params.id))
+// BAD: a request parameter is incorporated without validation into the response
+res.send("Unknown user: " + req.params.id); //vulnerability: Writing user input directly to an HTTP response allows for a cross-site scripting vulnerability.
+else
+// TODO: do something exciting
+;
+});
+
+
+system prompt
+
+You are a tool that takes in source code, patches the vulnerability, and outputs it.
+The input is always given as source code. Information about the vulnerability is located after "vulnerability:" string in the comments area.
+You should always output only the source code.
+If you need an explanation of what was fixed, add a comment to the source code.
+
+
+
+
+
+// llm model: gpt-4
+var app = require('express')();
+var escape = require('escape-html');
+
+app.get('/user/:id', function(req, res) {
+if (!isValidUserId(req.params.id))
+
+// FIXED: now encoding user input to avoid cross-site scripting vulnerability
+res.send("Unknown user: " + escape(req.params.id)); 
+
+else
+// TODO: do something exciting
+;
+});
+
+
+
+
+// llm model: gpt-3.5-turbo
+var app = require('express')();
+
+app.get('/user/:id', function(req, res) {
+  if (!isValidUserId(req.params.id)) {
+    // FIXED: Sanitize user input before incorporating it into the response
+    res.send("Unknown user: " + sanitizeInput(req.params.id));
+  } else {
+    // TODO: do something exciting
+    ;
+  }
+});
+
+
+
+
