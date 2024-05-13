@@ -13,6 +13,27 @@ import difflib
 import re
 
 
+gemini_safety_settings = [
+  {
+    "category": "HARM_CATEGORY_HARASSMENT",
+    "threshold": "BLOCK_NONE"
+  },
+  {
+    "category": "HARM_CATEGORY_HATE_SPEECH",
+    "threshold": "BLOCK_NONE"
+  },
+  {
+    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+    "threshold": "BLOCK_NONE"
+  },
+  {
+    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+    "threshold": "BLOCK_NONE"
+  },
+]
+
+
+
 def extract_code(text):
     # reference (MIT License): github.com/haseeb-heaven/langchain-coder/
     try:
@@ -25,7 +46,6 @@ def extract_code(text):
         
     except Exception as exception:
         return [text,]
-
 
 
 
@@ -191,7 +211,7 @@ for vulnerability_dict in vulnerabilities_dict_list:
         ('openai', 'gpt-4'),
         ('openai', 'gpt-3.5-turbo'),
         ('anthropic', 'claude-3-opus-20240229'),
-        ('gemini', 'gemini-pro')
+        ('gemini', 'gemini-1.5-pro-latest')
     ]
 
 
@@ -210,7 +230,8 @@ for vulnerability_dict in vulnerabilities_dict_list:
             llm_output = completion.choices[0].message.content
 
 
-        elif llm_brand == 'anthropic' and 1==0:
+        elif llm_brand == 'anthropic':
+            continue #Claude은 현재 사용하지 않음
             message = anthropic_client.messages.create(
                 max_tokens=4096,
                 messages=[
@@ -225,8 +246,10 @@ for vulnerability_dict in vulnerabilities_dict_list:
 
         
         elif llm_brand == 'gemini':
-            model = genai.GenerativeModel(llm_model)
-            response = model.generate_content(system_prompt + '\n'*10 + code_commented)
+            model = genai.GenerativeModel(model_name=llm_model, 
+                                          system_instruction=system_prompt, 
+                                          safety_settings=gemini_safety_settings)
+            response = model.generate_content(code_commented)
             llm_output = response.text            
 
 
@@ -239,7 +262,7 @@ for vulnerability_dict in vulnerabilities_dict_list:
             print('\n\nDiff Code', file=output_file)
             print(diff_code_output, file=output_file)
 
-            print("// llm model: "+llm_model, file=output_file)
+            print("\n\n// llm model: "+llm_model, file=output_file)
 
             print(patched_code, file=output_file)
 
