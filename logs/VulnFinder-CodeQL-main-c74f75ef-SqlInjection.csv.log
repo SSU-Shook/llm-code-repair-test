@@ -373,3 +373,212 @@ By using a parameterized query, the category parameter is properly bound to the 
 
 
 
+
+
+
+
+
+
+D:\llm-code-repair-test\llm-code-repair-test\VulnFinder-CodeQL-main\src\javascript-cwe\CWE-089\examples\NoSqlInjection.js
+const express = require("express");
+const mongoose = require("mongoose");
+const Todo = mongoose.model(
+"Todo",
+new mongoose.Schema({ text: { type: String } }, { timestamps: true })
+);
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.delete("/api/delete", async (req, res) => {
+let id = req.body.id;
+
+await Todo.deleteOne({ _id: id }); // BAD: id might be an object with special properties //vulnerability: Building a database query from user-controlled sources is vulnerable to insertion of malicious code by the user.
+
+res.json({ status: "ok" });
+});
+
+
+system prompt
+
+You are a program development tool that takes in source code and fixes vulnerabilities.
+The input is given as source code. The comments in the source code contain information about the vulnerability. Comments for vulnerability information start with the string "vulnerability:".
+Analyze the input source code and explain what each line does. And be specific about why the vulnerability occurs. Describe information about the vulnerability. Explain specifically what needs to be done to fix the vulnerability.
+
+Afterward, print out the source code with the vulnerability patched.
+
+
+
+
+
+// llm model: gpt-4
+The source code is in JavaScript using the Express.js framework and Mongoose library for MongoDB database operations.
+
+```javascript
+const express = require("express");
+```
+This line imports the Express.js framework, which is used to build the web application.
+
+```javascript
+const mongoose = require("mongoose");
+```
+This line imports Mongoose, a MongoDB object modeling tool that provides an interface to interact with MongoDB.
+
+```javascript
+const Todo = mongoose.model(
+"Todo",
+new mongoose.Schema({ text: { type: String } }, { timestamps: true })
+);
+```
+Here, a Mongoose model named `Todo` is being created. The schema definition for the model has a `text` property of type `String`, and timestamps are enabled.
+
+```javascript
+const app = express();
+```
+Here, the express application is initialized.
+
+```javascript
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+```
+These lines enable the parsing of json and URL-encoded bodies from incoming HTTP requests.
+
+```javascript
+app.delete("/api/delete", async (req, res) => {
+let id = req.body.id;
+await Todo.deleteOne({ _id: id }); // BAD: id might be an object with special properties //vulnerability: Building a database query from user-controlled sources is vulnerable to insertion of malicious code by the user.
+res.json({ status: "ok" });
+});
+```
+This block defines a DELETE operation for the `/api/delete` API endpoint. `req.body.id` is a user-provided parameter used to delete a `Todo` record from the database.
+
+The vulnerability occurs in the `await Todo.deleteOne({ _id: id });` line, where an ID provided by a user is directly used in a database delete operation. From a security perspective, you should never trust user input. Here, an attacker can potentially pass a complex object instead of a simple string `id` to run arbitrary operations on your database. This is a NoSQL injection vulnerability.
+
+To fix the vulnerability, we need to validate or sanitize user input before using in the database operation. One way to do this is to use a library like `mongoose.Types.ObjectId.isValid()` which checks if a string is a valid MongoDB ObjectId. If the id is invalid, we should not proceed and return an error to the user.
+
+Now, let's patch the vulnerability:
+
+```javascript
+const express = require("express");
+const mongoose = require("mongoose");
+const Todo = mongoose.model(
+"Todo",
+new mongoose.Schema({ text: { type: String } }, { timestamps: true })
+);
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.delete("/api/delete", async (req, res) => {
+    let id = req.body.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).send('Invalid ID');
+    }
+    
+    await Todo.deleteOne({ _id: id });
+
+    res.json({ status: "ok" });
+});
+```
+
+
+
+
+// llm model: gpt-3.5-turbo
+The vulnerability in the provided source code is a potential vulnerability to NoSQL Injection. The comment in the code explains that the `id` variable is directly taken from `req.body.id` and used to build a database query. If an attacker provides a malicious object as the value of `id`, they can manipulate the database query and perform malicious actions.
+
+To fix this vulnerability, you should sanitize the input data to ensure it only contains the expected values before using them in a database query. In this case, you should validate that the `id` variable is a valid ObjectId before using it in the `deleteOne` query.
+
+Here is the updated code with the vulnerability patched by validating the `id` variable:
+
+```javascript
+const express = require("express");
+const mongoose = require("mongoose");
+const { ObjectId } = mongoose.Types;
+const Todo = mongoose.model(
+  "Todo",
+  new mongoose.Schema({ text: { type: String } }, { timestamps: true })
+);
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.delete("/api/delete", async (req, res) => {
+  let id = req.body.id;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid id format" });
+  }
+
+  await Todo.deleteOne({ _id: id });
+  
+  res.json({ status: "ok" });
+});
+```
+
+In the updated code:
+1. We import `ObjectId` from `mongoose.Types` to validate the format of the `id`.
+2. We check if the `id` is a valid ObjectId using `ObjectId.isValid(id)`. If the `id` is not a valid ObjectId, we return a 400 Bad Request response with an error message.
+3. Only if the `id` is a valid ObjectId, we proceed with the `deleteOne` operation securely.
+
+By implementing these changes, the code is now protected against NoSQL Injection vulnerabilities.
+
+
+
+
+// llm model: claude-3-opus-20240229
+Here's the analysis of the source code and the vulnerability:
+
+1. `const express = require("express");`: This line imports the Express framework, which is a popular web application framework for Node.js.
+
+2. `const mongoose = require("mongoose");`: This line imports the Mongoose library, which is an Object Data Modeling (ODM) library for MongoDB and Node.js.
+
+3. `const Todo = mongoose.model(...);`: This line defines a Mongoose model named "Todo" based on the provided schema. The schema specifies that each todo item has a "text" field of type String and includes timestamps.
+
+4. `const app = express();`: This line creates an instance of an Express application.
+
+5. `app.use(express.json());`: This line sets up middleware to parse incoming requests with JSON payloads.
+
+6. `app.use(express.urlencoded({ extended: false }));`: This line sets up middleware to parse incoming requests with URL-encoded payloads.
+
+7. `app.delete("/api/delete", async (req, res) => { ... });`: This line defines a route handler for the DELETE request to the "/api/delete" endpoint. It uses an async function to handle the request asynchronously.
+
+8. `let id = req.body.id;`: This line extracts the "id" property from the request body.
+
+9. `await Todo.deleteOne({ _id: id });`: This line attempts to delete a todo item from the database based on the provided "id".
+
+Vulnerability:
+The vulnerability in this code lies in line 9: `await Todo.deleteOne({ _id: id });`. The issue is that the "id" value is directly passed from the request body without any validation or sanitization. This allows an attacker to potentially inject malicious code or manipulate the database query.
+
+For example, if the attacker sends a specially crafted "id" value, such as `{ "$gt": "" }`, it could delete all the documents in the collection instead of a specific todo item. This is known as a NoSQL injection vulnerability.
+
+To fix the vulnerability, it is important to validate and sanitize user input before using it in database queries. Here's an example of how to fix it:
+
+```javascript
+app.delete("/api/delete", async (req, res) => {
+  const id = req.body.id;
+
+  // Validate and sanitize the input
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    await Todo.deleteOne({ _id: mongoose.Types.ObjectId(id) });
+    res.json({ status: "ok" });
+  } else {
+    res.status(400).json({ error: "Invalid ID" });
+  }
+});
+```
+
+In the fixed version:
+1. We first check if the provided "id" is a valid MongoDB ObjectId using `mongoose.Types.ObjectId.isValid(id)`. This ensures that the "id" is in the expected format.
+2. If the "id" is valid, we create a new ObjectId using `mongoose.Types.ObjectId(id)` and use it in the `deleteOne` query. This prevents any potential injection attacks.
+3. If the "id" is not valid, we return a 400 Bad Request status along with an error message.
+
+By validating and sanitizing the user input, we can mitigate the risk of NoSQL injection and ensure that only valid and safe queries are executed against the database.
+
+
+
+

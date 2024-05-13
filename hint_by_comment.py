@@ -1,3 +1,5 @@
+import math
+import time
 import csv
 import os
 import datetime
@@ -114,7 +116,7 @@ log_file = open(script_directory+"/logs/"+csv_name+'.log', "a")
 
 
 for vulnerability_dict in vulnerabilities_dict_list:
-    system_prompt=prompt_psuedo_cot
+    system_prompt=prompt_with_comment_prefix
 
     source_file_path = os.path.abspath(script_directory + vulnerability_dict['path'])
 
@@ -162,6 +164,7 @@ for vulnerability_dict in vulnerabilities_dict_list:
 
 
     for llm_model_tuple in llm_models_list:
+        start = time.time()
         (llm_brand, llm_model) = llm_model_tuple
         result_code = str()
 
@@ -205,6 +208,10 @@ for vulnerability_dict in vulnerabilities_dict_list:
         print("\n"*3)
         log_file.write("\n"*3+'\n')
 
+        
+        end = time.time()
+        log_file.write(f"{end - start:.5f} sec\n")
         log_file.flush()
+        print(f"{end - start:.5f} sec")
 
 log_file.close()
