@@ -35,7 +35,6 @@ gemini_safety_settings = [
 
 
 def extract_code(text):
-    # reference (MIT License): github.com/haseeb-heaven/langchain-coder/
     try:
         if '```' in text:
             matches = re.findall(r'`{3}(.*?)`{3}', text, re.DOTALL)
