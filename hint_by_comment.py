@@ -30,7 +30,7 @@ gemini_safety_settings = [
     "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
     "threshold": "BLOCK_NONE"
   },
-]
+] #Gemini API의 안전 설정. 위험 카테고리에 대한 설정. 검열 비활성화
 
 
 
