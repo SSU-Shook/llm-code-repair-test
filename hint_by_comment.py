@@ -34,6 +34,7 @@ gemini_safety_settings = [
 
 
 
+
 def extract_code(text):
     try:
         if '```' in text:
@@ -218,9 +219,10 @@ for vulnerability_dict in vulnerabilities_dict_list:
 
 
     llm_models_list = [
-        ('openai', 'gpt-4'),
+        ('openai', 'gpt-4o'),
+        ('openai', 'gpt-4-turbo'),
         ('openai', 'gpt-3.5-turbo'),
-        ('anthropic', 'claude-3-opus-20240229'),
+        # ('anthropic', 'claude-3-opus-20240229'),
         ('gemini', 'gemini-1.5-pro-latest')
     ]
 
