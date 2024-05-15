@@ -5,9 +5,9 @@
 #env/
 
 
-js-cwe-codeql-csv/
+#js-cwe-codeql-csv/
 Pixi-master/
-VulnFinder-CodeQL-main/
+#VulnFinder-CodeQL-main/
 
 
 

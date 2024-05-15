@@ -5,7 +5,7 @@
 D:\llm-code-repair-test> python.exe hint_by_comment.py
 input csv file path: d:\llm-code-repair-test\llm-code-repair-test\codeql-csv\VulnFinder-CodeQL-main-c74f75ef-Xss.csv
 ```  
-GPT, Claude, Gemini를 활용한 코드 수정 테스트  
+GPT, Gemini를 활용한 코드 수정 테스트  
   
   
   
