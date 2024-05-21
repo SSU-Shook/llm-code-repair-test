@@ -6,6 +6,8 @@ import difflib
 import re
 from env import settings
 from openai import OpenAI
+import tempfile
+
 
 '''
 Todo
@@ -73,6 +75,29 @@ def check_status(run_id,thread_id):
     )
     return run.status
 
+def upload_file(assistant_id, uploaded_file):
+    global client
+    with open(uploaded_file, "rb") as f:
+        file = client.files.create(
+            file=f,
+            purpose = 'assistants'
+        )
+        print(file)
+    return file
+
+def preprocess_code(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    
+    if lines and lines[0].startswith('#!'):
+        lines = lines[1:]
+
+    temp_file = tempfile.NamedTemporaryFile(delete=False, mode='w')
+    temp_file.writelines(lines)
+    temp_file.close()
+    
+    return temp_file.name
+
 instruction = '''
 You are a program development tool that takes in source code and fixes vulnerabilities.
 '''.strip()
@@ -104,11 +129,16 @@ with open("filelist.jsonl", "r") as f:
         file_list.append(json.loads(line))
 
 for file in file_list:
-    file_id = client.files.create(
-        file=open(file['path'], "rb"),
-        purpose="user_data",
-    )
-    file_id_list.append(file_id.id)
+    # file_id = client.files.create(
+    #     file = file['path'],
+    #     # file=open(file['path'], "rb"),
+    #     # purpose="user_data",
+    #     purpose="assistants"
+    # )
+    temp_file_path = preprocess_code(file['path'])
+    assistant_file_id = upload_file(settings.LLM_API_KEY['assistant'], temp_file_path)
+    file_id_list.append(assistant_file_id)
+    os.remove(temp_file_path)
 
     # client.beta.assistants.files.create(assistant_id=assistant_id, file_id=uploaded_file.id)
 
@@ -161,7 +191,13 @@ thread  = client.beta.threads.create()
 message = client.beta.threads.messages.create(
     thread_id=thread.id,
     role="user",
-    content="hi?",
+    content="summarize this attachments code",
+    attachments=[
+        {
+            "file_id": file_id_list[0].id,
+            "tools": [{"type": "code_interpreter"}]
+        }
+    ]
 )
 
 
