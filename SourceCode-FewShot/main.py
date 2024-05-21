@@ -7,15 +7,16 @@ import re
 from env import settings
 from openai import OpenAI
 import tempfile
-
+import instructions
+import csv
 
 '''
 Todo
 # - .js filename list & path to .jsonl file
 # - Upload the codebase
-- Few-shot prompting with .jsonl lists
+- Few-shot prompting with example codes
 - query the model for the output
-    - match code style with few-shot prompt
+    - match code style
     - profiling the code style (e.g. tabWidth, semi, etc.)
 - save the output to a file (e.g. security patch comments, etc.)
 - refactoring the code
@@ -68,6 +69,12 @@ def diff_code(code1, code2):
     diff = difflib.unified_diff(code1, code2, lineterm='')
     return '\n'.join(diff)
 
+def diff_code(code1, code2):
+    code1 = code1.splitlines()
+    code2 = code2.splitlines()
+    diff = difflib.unified_diff(code1, code2, lineterm='')
+    return '\n'.join(diff)
+
 def check_status(run_id,thread_id):
     run = client.beta.threads.runs.retrieve(
         thread_id=thread_id,
@@ -75,7 +82,7 @@ def check_status(run_id,thread_id):
     )
     return run.status
 
-def upload_file(assistant_id, uploaded_file):
+def upload_file(uploaded_file):
     global client
     with open(uploaded_file, "rb") as f:
         file = client.files.create(
@@ -84,6 +91,25 @@ def upload_file(assistant_id, uploaded_file):
         )
         print(file)
     return file
+
+# def preprocess_code(file_path):
+#     with open(file_path, 'r') as file:
+#         lines = file.readlines()
+    
+#     if lines and lines[0].startswith('#!'):
+#         lines = lines[1:]
+    
+#     temp_dir = tempfile.mkdtemp()
+
+#     temp_file_path = os.path.join(temp_dir, os.path.basename(file_path))
+#     with open(temp_file_path, 'w') as temp_file:
+#         temp_file.writelines(lines)
+
+#     # temp_file = tempfile.NamedTemporaryFile(delete=False, mode='w')
+#     # temp_file.writelines(lines)
+#     # temp_file.close()
+    
+#     return temp_file_path
 
 def preprocess_code(file_path):
     with open(file_path, 'r') as file:
@@ -98,14 +124,12 @@ def preprocess_code(file_path):
     
     return temp_file.name
 
-instruction = '''
-You are a program development tool that takes in source code and fixes vulnerabilities.
-'''.strip()
+
 
 # create assistant
 # assistant = client.beta.assistants.create(
 #     name="Code Refactorer",
-#     instructions=instruction,
+#     instructions=instructions.instruction_assistance,
 #     tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
 #     model="gpt-4o",
 # )
@@ -129,75 +153,25 @@ with open("filelist.jsonl", "r") as f:
         file_list.append(json.loads(line))
 
 for file in file_list:
-    # file_id = client.files.create(
-    #     file = file['path'],
-    #     # file=open(file['path'], "rb"),
-    #     # purpose="user_data",
-    #     purpose="assistants"
-    # )
     temp_file_path = preprocess_code(file['path'])
-    assistant_file_id = upload_file(settings.LLM_API_KEY['assistant'], temp_file_path)
+    print(f'[*] {temp_file_path}')
+    assistant_file_id = upload_file(temp_file_path)
     file_id_list.append(assistant_file_id)
     os.remove(temp_file_path)
 
-    # client.beta.assistants.files.create(assistant_id=assistant_id, file_id=uploaded_file.id)
-
-print(file_id_list)
-
-prompt_instruction = '''
-You are a highly skilled security analyst tasked with fixing a vulnerability in the following source code:
-
-Your task is to carefully review the code, identify the root cause of the vulnerability, and provide a detailed explanation of how to fix it. Please provide your analysis and proposed solution in the following format:
-
-1. Vulnerability Summary:
-   - Briefly describe the type of vulnerability and its potential impact.
-
-2. Root Cause Analysis:
-   - Explain the specific code patterns, design flaws, or coding practices that led to this vulnerability.
-   - Provide line numbers or code snippets to illustrate the problematic areas.
-
-3. Proposed Solution:
-   - Outline the steps or code changes required to remediate the vulnerability.
-   - If applicable, provide sample code snippets or pseudocode to demonstrate the secure implementation.
-
-4. Additional Considerations:
-   - Mention any potential side effects, trade-offs, or best practices to consider when implementing the proposed solution.
-   - Suggest any additional security measures or coding practices that could further strengthen the codebase.
-
-Please provide a thorough and actionable response, ensuring that your proposed solution effectively mitigates the identified vulnerability while adhering to secure coding principles and best practices.'''
-'''
-I'm working on a project to fix a vulnerability by entering the source code into LLM.
-The source code is annotated with information about the vulnerability.
-Please create a prompt for me to enter the LLM.
-'''
-
 thread  = client.beta.threads.create()
 
-# thread = client.beta.threads.create(
-#     messages=[
-#         {
-#             "role": "user",
-#             "content": "summarize this code",
-#             "attachments": [
-#                 {
-#                     "file_id": file_id_list[0],
-#                     "tools": [{"type": "code_interpreter"}]
-#                 }
-#             ]
-#         }
-#     ]
-# )
+attachments_list = []
+for file in file_id_list:
+    attachments_list.append({"file_id": file.id, "tools": [{"type": "code_interpreter"}]})
+
+
 
 message = client.beta.threads.messages.create(
     thread_id=thread.id,
     role="user",
-    content="summarize this attachments code",
-    attachments=[
-        {
-            "file_id": file_id_list[0].id,
-            "tools": [{"type": "code_interpreter"}]
-        }
-    ]
+    content=instructions.instruction_learning_code,
+    attachments=attachments_list,
 )
 
 
@@ -221,3 +195,41 @@ messages = client.beta.threads.messages.list(
 )
 
 print(messages)
+
+
+
+script_directory = os.path.dirname(os.path.realpath(__file__)) #파이썬 스크립트가 존재하는 디렉터리
+
+csv_file_path = input("input csv file path: ")
+csv_name = os.path.basename(csv_file_path)
+
+f = open(csv_file_path, 'r', encoding='utf-8')
+rdr = csv.reader(f)
+
+vulnerabilities_list = list()
+for line in rdr:
+    vulnerabilities_list.append(line)
+f.close()
+
+vulnerabilities_dict_list = list()
+for vulnerability_list in vulnerabilities_list:
+    vulnerability_dict = dict()
+    vulnerability_dict['name'] = vulnerability_list[0]
+    vulnerability_dict['description'] = vulnerability_list[1]
+    vulnerability_dict['severity'] = vulnerability_list[2]
+    vulnerability_dict['message'] = vulnerability_list[3]
+    vulnerability_dict['path'] = vulnerability_list[4]
+    vulnerability_dict['start_line'] = int(vulnerability_list[5])
+    vulnerability_dict['start_column'] = int(vulnerability_list[6])
+    vulnerability_dict['end_line'] = int(vulnerability_list[7])
+    vulnerability_dict['end_column'] = int(vulnerability_list[8])
+
+print(vulnerability_dict)
+vulnerabilities_dict_list.append(vulnerability_dict)
+
+
+
+response = client.beta.threads.delete(thread.id)
+# response = client.beta.assistants.delete(assistant.id)
+for my_file in file_id_list:
+    response = client.files.delete(my_file.id)

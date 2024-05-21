@@ -1,0 +1,4 @@
+{"filename": "a.js", "path": "example/a.js"}
+{"filename": "bin.js", "path": "example/bin.js"}
+{"filename": "getLockfile.js", "path": "example/getLockfile.js"}
+{"filename": "getProjectTempDir.js", "path": "example/getProjectTempDir.js"}
