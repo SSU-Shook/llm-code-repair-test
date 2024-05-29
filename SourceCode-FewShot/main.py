@@ -25,6 +25,7 @@ Todo
 - 클래스화
 '''
 
+
 try:
     client = OpenAI(
         api_key=settings.LLM_API_KEY['openai'],
@@ -62,6 +63,7 @@ def extract_code(text): # LLM의 출력에서 코드만 추출하여 배열로 �
         
     return function
     '''
+
 
 def diff_code(code1, code2):
     code1 = code1.splitlines()
@@ -120,23 +122,33 @@ def preprocess_code(file_path):
     return temp_file.name
 
 
+# instruction_assistance = 
+'''
+You are a program development tool that takes in source code and fixes vulnerabilities.
+'''
+assistant_id = ''
+if settings.LLM_API_KEY['assistant'] is None:
+    # create assistant
+    assistant = client.beta.assistants.create(
+        name="Code Refactorer",
+        instructions=instructions.instruction_assistance,
+        tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
+        model="gpt-4o",
+    )
+    assistant_id = assistant.id
+    print(f'Created new assistant : {assistant.id}')
+    
 
-'''
-# create assistant
-assistant = client.beta.assistants.create(
-    name="Code Refactorer",
-    instructions=instructions.instruction_assistance,
-    tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
-    model="gpt-4o",
-)
-print(assistant)
-# id : asst_V3qdl7fwrsz1CI6iC3a1ZCuZ
-'''
+else :
+    assistant_id = settings.LLM_API_KEY['assistant']
+    print(f'Loaded existing assistant : {assistant_id}')
+    
+    
 
 # .js filename list & write to .jsonl file
 # get ./example dir .js list glob
-for path in glob.iglob('example/**/*.js', recursive=True):
-    with open("filelist.jsonl", "a+") as f:
+with open("filelist.jsonl", "w") as f:
+    for path in glob.iglob('example/**/*.js', recursive=True):
         f.write(json.dumps({"filename": os.path.basename(path), "path":path}) + "\n")
 
 with open("filelist.jsonl", "r") as f:
@@ -167,6 +179,15 @@ code_interpreter
 '''
 
 
+#instruction_learning_code = 
+'''
+Maintain Consistency:
+- Use a consistent coding style throughout the codebase.
+- Follow the existing conventions for naming variables, functions, and classes.
+- Follow the same rules for variable naming, indentation, spacing, and commenting
+
+Don't spit out output, just learn the source code. **Don't say anything!**
+'''
 message = client.beta.threads.messages.create(
     thread_id=thread.id,
     role="user",
@@ -183,7 +204,7 @@ Expected an array with maximum length 10, but got an array with length 12 instea
 
 my_run = client.beta.threads.runs.create(
     thread_id=thread.id,
-    assistant_id=settings.LLM_API_KEY['assistant'],
+    assistant_id=assistant_id
 )
 
 start_time = time.time()
@@ -239,3 +260,11 @@ response = client.beta.threads.delete(thread.id)
 # response = client.beta.assistants.delete(assistant.id)
 for my_file in file_id_list:
     response = client.files.delete(my_file.id)
+
+
+
+
+'''
+assistant 한 번 만들면 언제까지 유지되는가?
+thread의 개념...
+'''
