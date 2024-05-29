@@ -69,11 +69,6 @@ def diff_code(code1, code2):
     diff = difflib.unified_diff(code1, code2, lineterm='')
     return '\n'.join(diff)
 
-def diff_code(code1, code2):
-    code1 = code1.splitlines()
-    code2 = code2.splitlines()
-    diff = difflib.unified_diff(code1, code2, lineterm='')
-    return '\n'.join(diff)
 
 def check_status(run_id,thread_id):
     run = client.beta.threads.runs.retrieve(
@@ -126,14 +121,17 @@ def preprocess_code(file_path):
 
 
 
+'''
 # create assistant
-# assistant = client.beta.assistants.create(
-#     name="Code Refactorer",
-#     instructions=instructions.instruction_assistance,
-#     tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
-#     model="gpt-4o",
-# )
+assistant = client.beta.assistants.create(
+    name="Code Refactorer",
+    instructions=instructions.instruction_assistance,
+    tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
+    model="gpt-4o",
+)
+print(assistant)
 # id : asst_V3qdl7fwrsz1CI6iC3a1ZCuZ
+'''
 
 # .js filename list & write to .jsonl file
 # get ./example dir .js list glob
@@ -164,14 +162,16 @@ thread  = client.beta.threads.create()
 attachments_list = []
 for file in file_id_list:
     attachments_list.append({"file_id": file.id, "tools": [{"type": "code_interpreter"}]})
-
+'''
+code_interpreter
+'''
 
 
 message = client.beta.threads.messages.create(
     thread_id=thread.id,
     role="user",
     content=instructions.instruction_learning_code,
-    attachments=attachments_list,
+    attachments=attachments_list[:10], #documentation에서는 20개로 나와있는데, 여기서는 10개 넘었다고 오류 발생, 일단 10개로 바꾸어 봄
 )
 '''
 openai.BadRequestError: Error code: 400 - {'error': {'message': "Invalid 'attachments': array too long. 
