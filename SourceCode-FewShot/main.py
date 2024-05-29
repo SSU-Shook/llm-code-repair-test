@@ -85,7 +85,7 @@ def upload_file(uploaded_file):
         file = client.files.create(
             file=f,
             purpose = 'assistants'
-        )
+        ) # 파일 업로드 하면 언제까지 유지가 되는지....
         print(file)
     return file
 
@@ -122,6 +122,16 @@ def preprocess_code(file_path):
     return temp_file.name
 
 
+
+def get_js_file_list_recursively(directory_path):
+    file_list = []
+    for path in glob.iglob(f'{directory_path}/**/*.js', recursive=True):
+        file_list.append(path)
+    return file_list
+
+
+
+
 # instruction_assistance = 
 '''
 You are a program development tool that takes in source code and fixes vulnerabilities.
@@ -147,20 +157,26 @@ else :
 
 # .js filename list & write to .jsonl file
 # get ./example dir .js list glob
+
 with open("filelist.jsonl", "w") as f:
     for path in glob.iglob('example/**/*.js', recursive=True):
         f.write(json.dumps({"filename": os.path.basename(path), "path":path}) + "\n")
 
+
+
 with open("filelist.jsonl", "r") as f:
     print(f.read())
+
 
 # Upload the codebase
 file_list = []
 file_id_list = []
 
+
 with open("filelist.jsonl", "r") as f:
     for line in f:
         file_list.append(json.loads(line))
+
 
 for file in file_list:
     temp_file_path = preprocess_code(file['path'])
@@ -174,6 +190,7 @@ thread  = client.beta.threads.create()
 attachments_list = []
 for file in file_id_list:
     attachments_list.append({"file_id": file.id, "tools": [{"type": "code_interpreter"}]})
+
 '''
 code_interpreter
 '''
@@ -228,6 +245,8 @@ print(messages)
 script_directory = os.path.dirname(os.path.realpath(__file__)) #파이썬 스크립트가 존재하는 디렉터리
 
 csv_file_path = input("input csv file path: ")
+project_base_path = input("input project base path: ")
+
 csv_name = os.path.basename(csv_file_path)
 
 f = open(csv_file_path, 'r', encoding='utf-8')
@@ -251,9 +270,11 @@ for vulnerability_list in vulnerabilities_list:
     vulnerability_dict['end_line'] = int(vulnerability_list[7])
     vulnerability_dict['end_column'] = int(vulnerability_list[8])
 
-print(vulnerability_dict)
-vulnerabilities_dict_list.append(vulnerability_dict)
+    print(vulnerability_dict)
+    vulnerabilities_dict_list.append(vulnerability_dict)
 
+
+print(vulnerabilities_dict_list)
 
 
 response = client.beta.threads.delete(thread.id)
@@ -264,7 +285,20 @@ for my_file in file_id_list:
 
 
 
+
+
+
 '''
-assistant 한 번 만들면 언제까지 유지되는가?
+assistant 한 번 만들면 언제까지 유지되는가? (지우지 않으면 유지되는 듯)
+이건 다른 프로젝트(다른 코드베이스) 사이에서 공유되어도 됨
+
+
 thread의 개념...
+한 프로젝트 내에서는 같은 thread 사용하면 될 듯 함
+
+
+
+파일 upload 하면 같은 assistant 내에서 유지되는지
+assistant나 thread가 아니라, client 내에서 계속해서 유지되는 듯 하다.
+the size of all files uploaded by one organization can be up to 100 GB.
 '''
