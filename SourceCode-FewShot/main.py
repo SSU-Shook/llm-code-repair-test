@@ -37,10 +37,10 @@ try:
 except:
     pass
 
-def extract_code(text):
+def extract_code(text): # LLM의 출력에서 코드만 추출하여 배열로 반환
     try:
         if '```' in text:
-            matches = re.findall(r'`{3}(.*?)`{3}', text, re.DOTALL)
+            matches = re.findall(r'`{3}.*?\n(.*?)`{3}', text, re.DOTALL)
             return matches
 
         else:
@@ -112,7 +112,7 @@ def upload_file(uploaded_file):
 #     return temp_file_path
 
 def preprocess_code(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='UTF8') as file:
         lines = file.readlines()
     
     if lines and lines[0].startswith('#!'):
@@ -173,6 +173,12 @@ message = client.beta.threads.messages.create(
     content=instructions.instruction_learning_code,
     attachments=attachments_list,
 )
+'''
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Invalid 'attachments': array too long. 
+Expected an array with maximum length 10, but got an array with length 12 instead.", 
+'type': 'invalid_request_error', 'param': 'attachments', 'code': 'array_above_max_length'}}        
+'''
+#https://platform.openai.com/docs/assistants/how-it-works/agents
 
 
 my_run = client.beta.threads.runs.create(
