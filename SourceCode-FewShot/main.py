@@ -271,13 +271,16 @@ def profile_coding_convention(project_path, zero_shot_cot=False):
     프로파일 생성 요청 메시지들을 스레드에 추가
     '''
     instruction = instructions.instruction_analysis_coding_convention
-    if zero_shot_cot:
+    if zero_shot_cot == True:
         instruction += '\n' + "Let's think step by step."
+
+    if zero_shot_cot == "explain1":
+        instruction += '\n' + "First, the process of deriving the answer is explained in detail, and then the answer to the request is printed at the end."
 
     message = client.beta.threads.messages.create(
         thread_id=profile_thread.id,
         role="user",
-        content=instructions.instruction_analysis_coding_convention,
+        content=instruction,
         attachments=codebase_example_attachments_list,
     )
 
@@ -362,7 +365,7 @@ def main():
     print('-'*50)
 
     # profile_assistant를 사용하여 코딩 컨벤션 프로파일링 결과를 얻는다. (json 문자열 형태)
-    coding_convention_profile_json = profile_coding_convention(project_path, zero_shot_cot=True)
+    coding_convention_profile_json = profile_coding_convention(project_path, zero_shot_cot="explain1")
     print(coding_convention_profile_json)
 
 
