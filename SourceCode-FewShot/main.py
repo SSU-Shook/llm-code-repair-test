@@ -121,7 +121,7 @@ def preprocess_code(file_path):
     if lines and lines[0].startswith('#!'):
         lines = lines[1:]
 
-    temp_file = tempfile.NamedTemporaryFile(delete=False, mode='w')
+    temp_file = tempfile.NamedTemporaryFile(suffix='.js', delete=False, mode='w')
     temp_file.writelines(lines)
     temp_file.close()
     
@@ -129,34 +129,25 @@ def preprocess_code(file_path):
 
 
 
-def get_assistant():
+def get_assistant_id(assistant_type):
     '''
-    assistant를 반환한다.
-    settings에 assistant_id가 없다면 새로운 assistant를 만들어서 반환하고, 있다면 해당 assistant를 반환한다.
+    어시스턴트를 아이디를 반환한다.
+
+    profile_assistant: 코딩 컨벤션 프로파일링을 위한 assistant
+    예제 코드 10개를 입력하여(10개인 이유는 API의 한계... 더 가능할 시 수정), 코딩 컨벤션을 분석한 결과를 반환한다.
+
+    patch_assistant: 취약점 패치를 위한 assistant
+    profile_assistant가 반환한 코딩 컨벤션 분석 결과와, 취약 소스코드를 입력하여 코드를 패치한다.
+
+    explain_assistant: 취약점 패치 설명을 위한 assistant
+    취약점이 존재하는 코드 파일과, 취약점 패치 후의 코드 파일을 diff 한 결과를 입력하여, 취약점과 패치 내용에 대한 설명을 반환받는다.
     '''
 
-    '''
-    instruction_assistance = 
-    You are a program development tool that takes in source code and fixes vulnerabilities.
-    '''
-    assistant_id = ''
-    if settings.LLM_API_KEY['assistant'] is None: # 만약 LLM_API_KEY 딕셔너리에 assistant id가 없다면 새로운 assistant를 만든다.
-        # create assistant
-        assistant = client.beta.assistants.create(
-            name="Code Refactorer",
-            instructions=instructions.instruction_assistance,
-            tools=[{"type": "code_interpreter"}, {"type": "file_search"}], #code_interpreter과 file_search는 각각 무엇?
-            model="gpt-4o",
-        )
-        assistant_id = assistant.id
-        print(f'Created new assistant : {assistant.id}')
+    if settings.ASSISTANT_ID[assistant_type] is None: # 만약 LLM_API_KEY 딕셔너리에 assistant id가 없다면 새로운 assistant를 만든다.
+        raise Exception("Patch assistant is not defined.")
         
+    return settings.ASSISTANT_ID[assistant_type]
 
-    else: # 만약 LLM_API_KEY 딕셔너리에 assistant id가 있다면 불러와서 사용한다
-        assistant_id = settings.LLM_API_KEY['assistant']
-        print(f'Loaded existing assistant : {assistant_id}')
-    
-    
 
 def get_js_file_list(directory_path):
     '''
@@ -200,7 +191,7 @@ def create_attachments_list(file_id_list):
     '''
     attachments_list = []
     for file in file_id_list:
-        attachments_list.append({"file_id": file, "tools": [{"type": "code_interpreter"}]}) # code_interpreter는 무엇인지
+        attachments_list.append({"file_id": file, "tools": [{"type": "file_search"}]}) 
     return attachments_list
 
 
@@ -284,16 +275,16 @@ print('-'*50)
 
 
 '''
-thread 생성
+코딩 스타일 프로파일을 위한 thread 생성
 '''
-thread  = client.beta.threads.create() # 대화 세션 정도로 이해하면 될 듯
+profile_thread  = client.beta.threads.create() # 대화 세션 정도로 이해하면 될 듯
 
 
 
 '''
-메시지에 첨부할 메시지 리스트 생성
+코딩 스타일 추출 메시지에 첨부할 메시지 리스트 생성
 '''
-attachments_list = create_attachments_list(file_id_list)
+codebase_example_attachments_list = create_attachments_list(file_id_list)
 
 
 
@@ -301,10 +292,10 @@ attachments_list = create_attachments_list(file_id_list)
 프로파일 생성 요청 메시지들을 스레드에 추가
 '''
 message = client.beta.threads.messages.create(
-    thread_id=thread.id,
+    thread_id=profile_thread.id,
     role="user",
-    content=instructions.instruction_learning_code,
-    attachments=attachments_list,
+    content=instructions.instruction_analysis_coding_convention,
+    attachments=codebase_example_attachments_list,
 )
 
 
@@ -312,51 +303,53 @@ message = client.beta.threads.messages.create(
 '''
 스레드 실행
 '''
-my_run = client.beta.threads.runs.create(
-    thread_id=thread.id,
-    assistant_id=settings.LLM_API_KEY['assistant'],
+profile_run = client.beta.threads.runs.create(
+    thread_id=profile_thread.id,
+    assistant_id=get_assistant_id('profile_assistant')
 )
 
-
-
-
-
-
-
-
-'''
-instruction_learning_code = 
-Maintain Consistency:
-- Use a consistent coding style throughout the codebase.
-- Follow the existing conventions for naming variables, functions, and classes.
-- Follow the same rules for variable naming, indentation, spacing, and commenting
-
-Don't spit out output, just learn the source code. **Don't say anything!**
-'''
 
 
 start_time = time.time()
 
 
-status = check_status(my_run.id,thread.id)
+status = check_status(profile_run.id, profile_thread.id)
 while status != 'completed':
     time.sleep(1)
-    status = check_status(my_run.id,thread.id)
+    status = check_status(profile_run.id, profile_thread.id)
 
 
 
 elapsed_time = time.time() - start_time
 print("Elapsed time: {} minutes {} seconds".format(int((elapsed_time) // 60), int((elapsed_time) % 60)))
 print(f'Status: {status}')
+print('-'*50)
 
 
-
-
+'''
+thread의 메시지 목록 가져오기
+'''
 messages = client.beta.threads.messages.list(
-    thread_id=thread.id
+    thread_id=profile_thread.id
 )
-print(messages)
 
+
+'''
+llm의 프로파일 결과 출력
+'''
+llm_profile_result = messages.data[0].content[0].text.value
+print(llm_profile_result)
+print('-'*50)
+
+
+'''
+llm의 출력 결과에서 코딩 컨벤션 프로파일(json 형태)만 추출
+'''
+print("Coding convention profile:")
+extracted_codes_from_llm_profile_result = extract_code(llm_profile_result)
+for code in extracted_codes_from_llm_profile_result:
+    if code[0] == 'json':
+        print(code[1])
 
 
 

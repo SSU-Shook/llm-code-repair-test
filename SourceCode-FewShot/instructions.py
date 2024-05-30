@@ -39,6 +39,13 @@ Don't spit out output, just learn the source code. **Don't say anything!**
 '''
 
 
+
+instruction_analysis_coding_convention = '''
+Analyze the attached source code files and output ESLint_rules and Prettier_rules in json format, respectively.
+'''
+
+
+
 ######################################################################################################
 
 prompt_with_comment='''You are a tool that takes in source code, patches the vulnerability, and outputs it.
