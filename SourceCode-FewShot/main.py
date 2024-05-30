@@ -232,140 +232,141 @@ def get_absolute_path(base_path, file_path):
 
 
 
-
-'''
-변수 선언
-'''
-# codeql csv 파일의 경로
-codeql_csv_path = input("Enter the path of the CodeQL CSV file: ")
-codeql_csv_path = os.path.abspath(codeql_csv_path)
-
-
-# 프로젝트의 경로 = codeql csv 상의 경로의 베이스 경로
-project_path = input("Enter the path of the project: ")
-project_path = os.path.abspath(project_path)
-
-
-print('-'*50)
-print(f'CodeQL CSV path: {codeql_csv_path}')
-print(f'Project path: {project_path}')
-print('-'*50)
+def profile_coding_convention(project_path, zero_shot_cot=False):
+    '''
+    프로젝트 경로로부터 .js 파일 리스트 뽑기
+    '''
+    file_list = get_js_file_list(project_path)
+    print("File list:")
+    print(file_list)
+    print('-'*50)
 
 
 
-'''
-프로젝트 경로로부터 .js 파일 리스트 뽑기
-'''
-file_list = get_js_file_list(project_path)
-print("File list:")
-print(file_list)
-print('-'*50)
+    '''
+    .js 파일들을 client에 업로드
+    '''
+    file_id_list = upload_files(file_list)
+    print("Uploaded file id list:")
+    print(file_id_list)
+    print('-'*50)
 
 
 
-
-'''
-.js 파일들을 client에 업로드
-'''
-file_id_list = upload_files(file_list)
-print("Uploaded file id list:")
-print(file_id_list)
-print('-'*50)
+    '''
+    코딩 스타일 프로파일을 위한 thread 생성
+    '''
+    profile_thread  = client.beta.threads.create() # 대화 세션 정도로 이해하면 될 듯
 
 
 
-'''
-코딩 스타일 프로파일을 위한 thread 생성
-'''
-profile_thread  = client.beta.threads.create() # 대화 세션 정도로 이해하면 될 듯
+    '''
+    코딩 스타일 추출 메시지에 첨부할 메시지 리스트 생성
+    '''
+    codebase_example_attachments_list = create_attachments_list(file_id_list)
 
 
 
-'''
-코딩 스타일 추출 메시지에 첨부할 메시지 리스트 생성
-'''
-codebase_example_attachments_list = create_attachments_list(file_id_list)
+    '''
+    프로파일 생성 요청 메시지들을 스레드에 추가
+    '''
+    instruction = instructions.instruction_analysis_coding_convention
+    if zero_shot_cot:
+        instruction += '\n' + "Let's think step by step."
+
+    message = client.beta.threads.messages.create(
+        thread_id=profile_thread.id,
+        role="user",
+        content=instructions.instruction_analysis_coding_convention,
+        attachments=codebase_example_attachments_list,
+    )
 
 
 
-'''
-프로파일 생성 요청 메시지들을 스레드에 추가
-'''
-message = client.beta.threads.messages.create(
-    thread_id=profile_thread.id,
-    role="user",
-    content=instructions.instruction_analysis_coding_convention,
-    attachments=codebase_example_attachments_list,
-)
+    '''
+    스레드 실행
+    '''
+    profile_run = client.beta.threads.runs.create(
+        thread_id=profile_thread.id,
+        assistant_id=get_assistant_id('profile_assistant')
+    )
 
 
 
-'''
-스레드 실행
-'''
-profile_run = client.beta.threads.runs.create(
-    thread_id=profile_thread.id,
-    assistant_id=get_assistant_id('profile_assistant')
-)
+    start_time = time.time()
 
 
-
-start_time = time.time()
-
-
-status = check_status(profile_run.id, profile_thread.id)
-while status != 'completed':
-    time.sleep(1)
     status = check_status(profile_run.id, profile_thread.id)
+    while status != 'completed':
+        time.sleep(1)
+        status = check_status(profile_run.id, profile_thread.id)
 
 
 
-elapsed_time = time.time() - start_time
-print("Elapsed time: {} minutes {} seconds".format(int((elapsed_time) // 60), int((elapsed_time) % 60)))
-print(f'Status: {status}')
-print('-'*50)
+    elapsed_time = time.time() - start_time
+    print("Elapsed time: {} minutes {} seconds".format(int((elapsed_time) // 60), int((elapsed_time) % 60)))
+    print(f'Status: {status}')
+    print('-'*50)
 
 
-'''
-thread의 메시지 목록 가져오기
-'''
-messages = client.beta.threads.messages.list(
-    thread_id=profile_thread.id
-)
+    '''
+    thread의 메시지 목록 가져오기
+    '''
+    messages = client.beta.threads.messages.list(
+        thread_id=profile_thread.id
+    )
 
 
-'''
-llm의 프로파일 결과 출력
-'''
-llm_profile_result = messages.data[0].content[0].text.value
-print(llm_profile_result)
-print('-'*50)
+    '''
+    llm의 프로파일 결과 출력
+    '''
+    llm_profile_result = messages.data[0].content[0].text.value
+    print(llm_profile_result)
+    print('-'*50)
 
 
-'''
-llm의 출력 결과에서 코딩 컨벤션 프로파일(json 형태)만 추출
-'''
-print("Coding convention profile:")
-extracted_codes_from_llm_profile_result = extract_code(llm_profile_result)
-for code in extracted_codes_from_llm_profile_result:
-    if code[0] == 'json':
-        print(code[1])
+    '''
+    llm의 출력 결과에서 코딩 컨벤션 프로파일(json 형태)만 추출
+    '''
+    print("Coding convention profile:")
+    extracted_codes_from_llm_profile_result = extract_code(llm_profile_result)
+    
+    for code in extracted_codes_from_llm_profile_result:
+        if code[0] == 'json':
+            print(code[1])
 
+    return [code[1] for code in extracted_codes_from_llm_profile_result if code[0] == 'json'][-1] # json 문자열 형식으로 반환
 
-
-
-
-'''
-assistant 한 번 만들면 언제까지 유지되는가? (지우지 않으면 유지되는 듯)
-이건 다른 프로젝트(다른 코드베이스) 사이에서 공유되어도 됨
-
-
-thread의 개념...
-한 프로젝트 내에서는 같은 thread 사용하면 될 듯 함
+    
 
 
 
-파일 upload 하면 같은 assistant 내에서 유지되는지
-assistant나 thread가 아니라, client 내에서 계속해서 유지되는 듯 하다.
-the size of all files uploaded by one organization can be up to 100 GB.
-'''
+
+def main():
+    '''
+    변수 선언
+    '''
+    # codeql csv 파일의 경로
+    codeql_csv_path = input("Enter the path of the CodeQL CSV file: ")
+    codeql_csv_path = os.path.abspath(codeql_csv_path)
+
+
+    # 프로젝트의 경로 = codeql csv 상의 경로의 베이스 경로
+    project_path = input("Enter the path of the project: ")
+    project_path = os.path.abspath(project_path)
+
+
+    print('-'*50)
+    print(f'CodeQL CSV path: {codeql_csv_path}')
+    print(f'Project path: {project_path}')
+    print('-'*50)
+
+    # profile_assistant를 사용하여 코딩 컨벤션 프로파일링 결과를 얻는다. (json 문자열 형태)
+    coding_convention_profile_json = profile_coding_convention(project_path, zero_shot_cot=True)
+    print(coding_convention_profile_json)
+
+
+
+
+if __name__ == "__main__":
+    main()
