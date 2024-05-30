@@ -1,0 +1,1 @@
+"Indirect uncontrolled command line","Forwarding command-line arguments to a child process executed within a shell may indirectly introduce command-line injection vulnerabilities.","warning","This command depends on an unsanitized [[""command-line argument""|""relative:///bin.js:17:2:21:2""]].","/getLockfile.js","43","4","43","134"
