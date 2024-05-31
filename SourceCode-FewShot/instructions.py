@@ -40,7 +40,7 @@ Don't spit out output, just learn the source code. **Don't say anything!**
 
 
 
-prompt_coding_convention_analysis = '''
+prompt_code_style_analysis = '''
 Analyze the attached source code files and output ESLint_rules and Prettier_rules in json format, respectively.
 '''
 

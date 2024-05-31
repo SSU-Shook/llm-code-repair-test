@@ -246,7 +246,7 @@ def get_absolute_path(base_path, file_path):
 
 
 
-def profile_coding_convention(project_path, zero_shot_cot=False):
+def profile_code_style(project_path, zero_shot_cot=False):
     '''
     프로젝트 경로로부터 .js 파일 리스트 뽑기
     '''
@@ -284,7 +284,7 @@ def profile_coding_convention(project_path, zero_shot_cot=False):
     '''
     프로파일 생성 요청 메시지들을 스레드에 추가
     '''
-    prompt = instructions.prompt_coding_convention_analysis
+    prompt = instructions.prompt_code_style_analysis
     if zero_shot_cot == True:
         prompt += '\n' + "Let's think step by step."
 
@@ -345,7 +345,7 @@ def profile_coding_convention(project_path, zero_shot_cot=False):
     '''
     llm의 출력 결과에서 코딩 컨벤션 프로파일(json 형태)만 추출
     '''
-    print("Coding convention profile:")
+    print("Code style profile:")
     extracted_codes_from_llm_profile_result = extract_code(llm_profile_result)
     extracted_json_codes_from_llm_profile_result = [code[1] for code in extracted_codes_from_llm_profile_result if code[0] == 'json']
     
@@ -358,14 +358,20 @@ def profile_coding_convention(project_path, zero_shot_cot=False):
 
     return extracted_json_codes_from_llm_profile_result[-1] # json 문자열 형식으로 반환
 
-    
 
-def patch_vulnerability(project_path, codeql_csv_path, zero_shot_cot=False):
+
+'''
+프로젝트 경로와 codeql csv 파일 경로를 입력받아 취약점을 패치함
+원래 파일과 패치된 파일의 경로를 원소로 가지는 튜플로 이루어진 배열 반환
+'''
+def patch_vulnerability(project_path, codeql_csv_path, code_style_profile=None, zero_shot_cot=False):
     pass
 
 
 
-
+'''
+취약점이 존재하는 소스코드와 패치된 소스코드를 입력받아, 취약점과 패치 내용에 대한 설명을 반환
+'''
 def explain_patch(vulnerable_code_path, patched_code_path, zero_shot_cot=False):
     explain_thread = client.beta.threads.create()
 
@@ -406,7 +412,6 @@ def explain_patch(vulnerable_code_path, patched_code_path, zero_shot_cot=False):
     llm_explain_result = messages.data[0].content[0].text.value
     print(llm_explain_result)
     print('-'*50)
-
 
 
 

@@ -32,8 +32,8 @@ def main():
     print('-'*50)
 
     # profile_assistant를 사용하여 코딩 컨벤션 프로파일링 결과를 얻는다. (json 문자열 형태)
-    coding_convention_profile_json = sast_llm.profile_coding_convention(project_path, zero_shot_cot=True)
-    print(coding_convention_profile_json)
+    code_style_profile_json = sast_llm.profile_code_style(project_path, zero_shot_cot=True)
+    print(code_style_profile_json)
 
 
 
