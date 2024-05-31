@@ -53,6 +53,20 @@ except:
     pass
 
 
+def get_file_name_from_path(file_path):
+    return os.path.basename(file_path)
+
+
+
+
+def get_file_list_from_path_list(path_list):
+    '''
+    특정 경로의 디렉터리에서 .js 파일 리스트를 재귀적으로 탐색하여 반환한다.
+    '''
+    file_list = []
+    for path in path_list:
+        file_list.append({"filename": os.path.basename(path), "path":path})
+    return file_list
 
 
 def extract_code(text): 
@@ -140,7 +154,7 @@ def get_assistant_id(assistant_type):
     profile_assistant가 반환한 코딩 컨벤션 분석 결과와, 취약 소스코드를 입력하여 코드를 패치한다.
 
     explain_assistant: 취약점 패치 설명을 위한 assistant
-    취약점이 존재하는 코드 파일과, 취약점 패치 후의 코드 파일을 diff 한 결과를 입력하여, 취약점과 패치 내용에 대한 설명을 반환받는다.
+    취약점이 존재하는 코드 파일과, 취약점 패치 후의 코드 파일을 입력하여, 취약점과 패치 내용에 대한 설명을 반환받는다.
     '''
 
     if settings.ASSISTANT_ID[assistant_type] is None: # 만약 LLM_API_KEY 딕셔너리에 assistant id가 없다면 새로운 assistant를 만든다.
@@ -270,17 +284,17 @@ def profile_coding_convention(project_path, zero_shot_cot=False):
     '''
     프로파일 생성 요청 메시지들을 스레드에 추가
     '''
-    instruction = instructions.instruction_analysis_coding_convention
+    prompt = instructions.prompt_coding_convention_analysis
     if zero_shot_cot == True:
-        instruction += '\n' + "Let's think step by step."
+        prompt += '\n' + "Let's think step by step."
 
     if zero_shot_cot == "explain1":
-        instruction += '\n' + "First, the process of deriving the answer is explained in detail, and then the answer to the request is printed at the end."
+        prompt += '\n' + "First, the process of deriving the answer is explained in detail, and then the answer to the request is printed at the end."
 
     message = client.beta.threads.messages.create(
         thread_id=profile_thread.id,
         role="user",
-        content=instruction,
+        content=prompt,
         attachments=codebase_example_attachments_list,
     )
 
@@ -333,43 +347,67 @@ def profile_coding_convention(project_path, zero_shot_cot=False):
     '''
     print("Coding convention profile:")
     extracted_codes_from_llm_profile_result = extract_code(llm_profile_result)
+    extracted_json_codes_from_llm_profile_result = [code[1] for code in extracted_codes_from_llm_profile_result if code[0] == 'json']
     
-    for code in extracted_codes_from_llm_profile_result:
+
+    for code in extracted_json_codes_from_llm_profile_result:
         if code[0] == 'json':
             print(code[1])
+    print('-'*50)
 
-    return [code[1] for code in extracted_codes_from_llm_profile_result if code[0] == 'json'][-1] # json 문자열 형식으로 반환
+
+    return extracted_json_codes_from_llm_profile_result[-1] # json 문자열 형식으로 반환
 
     
 
+def patch_vulnerability(project_path, codeql_csv_path, zero_shot_cot=False):
+    pass
 
 
 
-def main():
-    '''
-    변수 선언
-    '''
-    # codeql csv 파일의 경로
-    codeql_csv_path = input("Enter the path of the CodeQL CSV file: ")
-    codeql_csv_path = os.path.abspath(codeql_csv_path)
 
+def explain_patch(vulnerable_code_path, patched_code_path, zero_shot_cot=False):
+    explain_thread = client.beta.threads.create()
 
-    # 프로젝트의 경로 = codeql csv 상의 경로의 베이스 경로
-    project_path = input("Enter the path of the project: ")
-    project_path = os.path.abspath(project_path)
+    file_id_list = upload_files(get_file_list_from_path_list([vulnerable_code_path, patched_code_path]))
+    attachments_list = create_attachments_list(file_id_list)
 
+    prompt = instructions.prompt_explain_patch
 
+    message = client.beta.threads.messages.create(
+        thread_id=explain_thread.id,
+        role="user",
+        content=prompt,
+        attachments=attachments_list,
+    )    
+
+    explain_run = client.beta.threads.runs.create(
+        thread_id=explain_thread.id,
+        assistant_id=get_assistant_id('explain_assistant')
+    )
+
+    start_time = time.time()
+
+    status = check_status(explain_run.id, explain_thread.id)
+    while status != 'completed':
+        time.sleep(1)
+        status = check_status(explain_run.id, explain_thread.id)
+    
+    elapsed_time = time.time() - start_time
+    print("Elapsed time: {} minutes {} seconds".format(int((elapsed_time) // 60), int((elapsed_time) % 60)))
+    print(f'Status: {status}')
     print('-'*50)
-    print(f'CodeQL CSV path: {codeql_csv_path}')
-    print(f'Project path: {project_path}')
+
+
+    messages = client.beta.threads.messages.list(
+        thread_id=explain_thread.id
+    )
+
+    llm_explain_result = messages.data[0].content[0].text.value
+    print(llm_explain_result)
     print('-'*50)
 
-    # profile_assistant를 사용하여 코딩 컨벤션 프로파일링 결과를 얻는다. (json 문자열 형태)
-    coding_convention_profile_json = profile_coding_convention(project_path, zero_shot_cot="explain1")
-    print(coding_convention_profile_json)
 
 
 
 
-if __name__ == "__main__":
-    main()

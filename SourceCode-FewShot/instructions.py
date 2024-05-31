@@ -40,9 +40,16 @@ Don't spit out output, just learn the source code. **Don't say anything!**
 
 
 
-instruction_analysis_coding_convention = '''
+prompt_coding_convention_analysis = '''
 Analyze the attached source code files and output ESLint_rules and Prettier_rules in json format, respectively.
 '''
+
+
+
+prompt_explain_patch = '''
+Analyze the attached source code and explain what vulnerabilities existed and how they were patched.
+'''
+
 
 
 
